@@ -31,7 +31,6 @@ export type CardData = {
 
 type Props = {
   data: CardData;
-  origin?: string;
   className?: string;
   branding?: CardBranding;
 };
@@ -61,7 +60,7 @@ function Field({
   );
 }
 
-export function MembershipCard({ data, origin, className, branding: brandingProp }: Props) {
+export function MembershipCard({ data, className, branding: brandingProp }: Props) {
   const ctx = useBranding();
   const branding = brandingProp ?? ctx.branding ?? DEFAULT_BRANDING;
   const theme = data.gender === "feminin" ? "gray" : "green";
@@ -70,19 +69,15 @@ export function MembershipCard({ data, origin, className, branding: brandingProp
   const mosque = theme === "green" ? "#083820" : "#2A2A2A";
   const [qr, setQr] = useState<string>("");
 
-  const verifyUrl = useMemo(() => {
-    const base = (
-      branding.publicBaseUrl ||
-      origin ||
-      (typeof window !== "undefined" ? window.location.origin : "")
-    ).replace(/\/$/, "");
-    const numero = data.subscriptionNumber || "BSN-000000";
-    return `${base}/verifier/${encodeURIComponent(numero)}`;
-  }, [origin, data.subscriptionNumber, branding.publicBaseUrl]);
+  const libraryUrl = useMemo(() => {
+    const base = branding.publicBaseUrl.trim();
+    return base ? base.replace(/\/$/, "") : "";
+  }, [branding.publicBaseUrl]);
 
   useEffect(() => {
+    if (!libraryUrl) return;
     let cancelled = false;
-    QRCode.toDataURL(verifyUrl, {
+    QRCode.toDataURL(libraryUrl, {
       width: 320,
       margin: 1,
       errorCorrectionLevel: "M",
@@ -97,7 +92,7 @@ export function MembershipCard({ data, origin, className, branding: brandingProp
     return () => {
       cancelled = true;
     };
-  }, [verifyUrl, primary]);
+  }, [libraryUrl, primary]);
 
   const lastName = (data.lastName || "Nom de l'abonné").toUpperCase();
   const firstName = data.firstName || "Prénoms de l'abonné";
@@ -182,7 +177,7 @@ export function MembershipCard({ data, origin, className, branding: brandingProp
 
         <div className="card-qr-col">
           <div className="card-qr">
-            {qr ? (
+            {qr && libraryUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={qr} alt="QR code d'abonnement" />
             ) : (

@@ -58,22 +58,36 @@ Connectez-vous avec le `SEED_ADMIN_USERNAME` / `SEED_ADMIN_PASSWORD` définis su
 Ces valeurs ne sont dans aucun fichier du dépôt : gardez-les dans votre gestionnaire de mots de passe.
 **Changez-le ensuite** : Maintenance → panneau « Mon mot de passe ». Puis retirez `SEED_ADMIN_PASSWORD` des variables Vercel.
 
-Le logo affiché sur les cartes et les écrans est le monogramme dessiné par l’application tant que vous n’avez pas téléversé votre logo (Maintenance est inutile ici : c’est dans **Super admin — Carte → Remplacer le logo**). Un fichier `public/logo-cmp.png` fonctionne aussi, mais le logo téléversé est stocké en base et s’applique partout.
+Le logo affiché sur les cartes et les écrans est le monogramme dessiné par l’application tant que vous n’avez pas téléversé votre logo (dans **Super admin — Carte → Remplacer le logo**). Le logo téléversé est stocké en base et s’applique partout.
 
 Les tables se créent automatiquement à la première connexion.
 
 Menu **Super admin — Carte** : logo, textes et ajouts sur toutes les cartes.
 
-Dans Super admin, renseignez **URL publique** avec l’adresse Vercel (ou votre domaine) pour que les QR codes restent valides.
+## 5. QR code de la carte
 
-## 5. Nom de domaine (optionnel)
+Le QR gravé sur chaque carte ouvre **le lien de la bibliothèque numérique** renseigné dans
+**Super admin — Carte → Lien de la bibliothèque numérique (QR code)** (ou Maintenance → même champ).
+Tant que ce lien n’est pas enregistré, le QR reste vide et l’écran « Générer une carte » affiche un
+avertissement. L’application ne publie aucune page de vérification publique : les données d’un abonné
+(ne nom, photo, contact) ne sont accessibles qu’aux comptes connectés.
+
+## 6. Rappels sécurité
+
+- Rôles : seul le **super administrateur** peut créer un compte, téléverser le logo, modifier les
+  textes de la carte et télécharger une sauvegarde JSON complète.
+- Mot de passe : 8 caractères minimum ; 8 tentatives de connexion par adresse IP puis blocage 15 min.
+- Cookie de session `httpOnly`, `secure`, `sameSite=lax`, et contrôle d’origine sur chaque appel API.
+- Images acceptées : PNG, JPEG, WEBP, GIF uniquement (SVG refusé), 2 Mo par photo, 1 Mo pour le logo.
+- Les réponses d’erreur ne divulguent jamais un message technique ou une information de base.
+- Connexion PostgreSQL en TLS avec vérification du certificat (`rejectUnauthorized`).
+
+## 7. Nom de domaine (optionnel)
 
 Vercel → Project → **Settings → Domains**  
 Exemple : `bibliotheque.mosquee-salam.ci`
 
-Puis recopiez cette adresse dans Super admin → URL publique.
-
-## 6. Mises à jour
+## 8. Mises à jour
 
 ```bash
 git add .

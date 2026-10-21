@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { admins } from "@/db/schema";
-import { fail, requireApiUser } from "@/lib/api-guard";
+import { fail, requireApiUser, requireSuperAdmin } from "@/lib/api-guard";
 import { hashPassword } from "@/lib/auth";
 import { logActivity } from "@/lib/logs";
 
@@ -25,7 +25,7 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const { user, response } = await requireApiUser();
+  const { user, response } = await requireSuperAdmin();
   if (!user) return response;
   try {
     const body = (await request.json()) as {
@@ -36,8 +36,14 @@ export async function POST(request: Request) {
     const username = body.username?.trim() ?? "";
     const password = body.password ?? "";
     const displayName = body.displayName?.trim() || username;
-    if (!username || password.length < 6) {
-      return fail("Identifiant requis et mot de passe d'au moins 6 caractères.");
+    if (!/^[A-Za-z0-9._-]{3,32}$/.test(username)) {
+      return fail("Identifiant invalide (3 à 32 lettres, chiffres, point, tiret ou souligné).");
+    }
+    if (password.length < 8 || password.length > 128) {
+      return fail("Mot de passe : entre 8 et 128 caractères.");
+    }
+    if (displayName.length > 80) {
+      return fail("Nom affiché trop long (80 caractères maximum).");
     }
     const rows = await db
       .insert(admins)

@@ -71,12 +71,18 @@ export default function MaintenancePage() {
 
   async function saveSettings(e: FormEvent) {
     e.preventDefault();
-    await apiFetch("/api/settings", {
+    setError(null);
+    const res = await apiFetch("/api/settings", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ publicBaseUrl }),
     });
-    setMessage("Adresse publique enregistrée. Elle pourra être utilisée dans les QR codes.");
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      setError(data.error || "Enregistrement impossible (réservé au super administrateur).");
+      return;
+    }
+    setMessage("Lien de la bibliothèque numérique enregistré : les QR codes des cartes l’utiliseront.");
   }
 
   async function createAdmin(e: FormEvent) {
@@ -199,14 +205,14 @@ export default function MaintenancePage() {
         <div className="panel">
           <h3>Adresse de la bibliothèque numérique</h3>
           <p className="muted">
-            Si une URL publique est configurée plus tard, les QR codes pointeront vers la fiche de
-            vérification. Sans URL, le domaine actuel de l&apos;application est utilisé.
+            Le QR code gravé sur la carte d’abonnement ouvre ce lien à l’abonné. Laissez vide tant
+            que le développeur de la bibliothèque numérique ne l’a pas fourni.
           </p>
           <form onSubmit={(e) => void saveSettings(e)} className="stack">
             <label className="field">
-              <span>URL publique (optionnelle)</span>
+              <span>Lien de la bibliothèque numérique</span>
               <input
-                placeholder="https://bibliotheque.mosquee-salam.ci"
+                placeholder="https://… (lien fourni par le développeur)"
                 value={publicBaseUrl}
                 onChange={(e) => setPublicBaseUrl(e.target.value)}
               />
@@ -254,7 +260,7 @@ export default function MaintenancePage() {
               />
             </label>
             <label className="field">
-              <span>Mot de passe (6 caractères min.)</span>
+              <span>Mot de passe (8 caractères min.)</span>
               <input
                 type="password"
                 value={adminForm.password}

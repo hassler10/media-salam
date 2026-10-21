@@ -213,13 +213,16 @@ function ParametresInner() {
             <input value={form.qrHint} onChange={(e) => update("qrHint", e.target.value)} />
           </label>
           <label className="field">
-            <span>URL publique (QR code)</span>
+            <span>Lien de la bibliothèque numérique (QR code)</span>
             <input
-              placeholder="https://bibliotheque.mosquee-salam.ci"
+              placeholder="https://lien-communique-par-le-developpeur"
               value={form.publicBaseUrl}
               onChange={(e) => update("publicBaseUrl", e.target.value)}
             />
           </label>
+          <p className="muted">
+            Le QR de la carte ouvre ce lien à l’abonné. Sans adresse enregistrée, le QR reste vide.
+          </p>
 
           <h3>Champ supplémentaire sur la carte</h3>
           <p className="muted">Laissez vide pour ne rien ajouter. Sinon le champ apparaît entre le contact et le numéro.</p>

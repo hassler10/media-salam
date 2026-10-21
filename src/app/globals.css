@@ -453,7 +453,7 @@ button, input, select, textarea {
 }
 .zoom-label { display: flex; gap: 10px; align-items: center; font-size: 13px; }
 
-.login-page, .verify-page {
+.login-page {
   min-height: 100vh;
   display: grid;
   place-items: center;
@@ -462,7 +462,7 @@ button, input, select, textarea {
   position: relative;
   overflow: hidden;
 }
-.login-card, .verify-card {
+.login-card {
   width: min(440px, 100%);
   background: rgba(255, 252, 247, .9);
   backdrop-filter: blur(22px) saturate(1.2);
@@ -481,7 +481,7 @@ button, input, select, textarea {
   margin: 0 auto 8px;
   display: block;
 }
-.login-card h1, .verify-card h1 {
+.login-card h1 {
   margin: 6px 0;
   font-family: var(--font-display), serif;
   color: var(--green-dark);
@@ -489,11 +489,6 @@ button, input, select, textarea {
 .login-sub { color: var(--muted); margin-top: 0; }
 .login-form { text-align: left; margin-top: 18px; }
 .login-hint { font-size: 12px; color: var(--muted); margin-top: 16px; }
-.verify-photo {
-  width: 96px; height: 120px; object-fit: cover; border-radius: 12px; margin: 8px auto;
-  display: block;
-}
-.verify-body h2 { margin: 8px 0 4px; }
 
 /* ===== CARTE D'ABONNEMENT ===== */
 .card-scaler { position: relative; }
@@ -1099,7 +1094,7 @@ input[type="color"] {
 .data-table tbody tr { animation: fadeIn .4s ease both; }
 .sidebar { animation: slideInLeft .5s var(--ease-out) both; }
 .topbar { animation: fadeIn .5s ease both; }
-.login-card, .verify-card { animation: popIn .6s var(--ease-spring) both; }
+.login-card { animation: popIn .6s var(--ease-spring) both; }
 .login-logo, .boot-logo { animation: logoFloat 6s ease-in-out infinite; }
 .alert { animation: riseIn .35s var(--ease-out) both; }
 .modal-backdrop { animation: fadeIn .22s ease both; }

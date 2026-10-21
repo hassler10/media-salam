@@ -17,7 +17,8 @@ export async function GET() {
     await db.execute(sql`select 1`);
   } catch (error) {
     database = "erreur";
-    databaseMessage = error instanceof Error ? error.message : "Connexion indisponible.";
+    databaseMessage = "Connexion à la base de données indisponible.";
+    console.error("Contrôle de la base :", error);
   }
 
   const today = todayISO();

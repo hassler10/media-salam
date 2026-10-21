@@ -145,10 +145,51 @@ export async function authenticate(username: string, password: string) {
   return verifyPassword(password, admin.passwordHash) ? admin : null;
 }
 
+type Attempt = { count: number; resetAt: number };
+
+const LOGIN_MAX_ATTEMPTS = 8;
+const LOGIN_WINDOW_MS = 1000 * 60 * 15;
+
+const globalForAttempts = globalThis as typeof globalThis & {
+  __bmsLoginAttempts?: Map<string, Attempt>;
+};
+
+const attempts = globalForAttempts.__bmsLoginAttempts ?? new Map<string, Attempt>();
+globalForAttempts.__bmsLoginAttempts = attempts;
+
+export function isLoginThrottled(ip: string): boolean {
+  const entry = attempts.get(ip);
+  if (!entry) return false;
+  if (entry.resetAt < Date.now()) {
+    attempts.delete(ip);
+    return false;
+  }
+  return entry.count >= LOGIN_MAX_ATTEMPTS;
+}
+
+export function registerLoginFailure(ip: string): void {
+  const entry = attempts.get(ip);
+  if (!entry || entry.resetAt < Date.now()) {
+    attempts.set(ip, { count: 1, resetAt: Date.now() + LOGIN_WINDOW_MS });
+    return;
+  }
+  entry.count += 1;
+}
+
+export function clearLoginFailures(ip: string): void {
+  attempts.delete(ip);
+}
+
+export function clientIp(request: Request): string {
+  const forwarded = request.headers.get("x-forwarded-for");
+  const first = forwarded?.split(",")[0]?.trim();
+  return first || request.headers.get("x-real-ip") || "unknown";
+}
+
 export function sessionCookieOptions() {
   return {
     httpOnly: true as const,
-    sameSite: "none" as const,
+    sameSite: "lax" as const,
     secure: true,
     path: "/",
     maxAge: SESSION_TTL_MS / 1000,

@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { activityLogs, admins, cardErrors, settings, subscribers, subscriptionCounter } from "@/db/schema";
-import { fail, requireApiUser } from "@/lib/api-guard";
+import { fail, requireSuperAdmin } from "@/lib/api-guard";
 import { logActivity } from "@/lib/logs";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const { user, response } = await requireApiUser();
+  const { user, response } = await requireSuperAdmin();
   if (!user) return response;
   try {
     const [subs, logs, ads, errs, sets, counters] = await Promise.all([

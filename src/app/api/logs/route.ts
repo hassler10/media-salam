@@ -10,7 +10,8 @@ export async function GET(request: Request) {
   const { user, response } = await requireApiUser();
   if (!user) return response;
   const url = new URL(request.url);
-  const limit = Math.min(Number(url.searchParams.get("limit") ?? 200), 500);
+  const raw = Number(url.searchParams.get("limit") ?? 200);
+  const limit = Number.isFinite(raw) ? Math.max(1, Math.min(Math.trunc(raw), 500)) : 200;
   const rows = await db.select().from(activityLogs).orderBy(desc(activityLogs.createdAt)).limit(limit);
   return NextResponse.json({
     items: rows.map((row) => ({

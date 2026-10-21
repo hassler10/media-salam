@@ -1,12 +1,27 @@
 import { NextResponse } from "next/server";
-import { authenticate, sessionCookieOptions, signSession } from "@/lib/auth";
+import {
+  authenticate,
+  clearLoginFailures,
+  clientIp,
+  isLoginThrottled,
+  registerLoginFailure,
+  sessionCookieOptions,
+  signSession,
+} from "@/lib/auth";
 import { SESSION_COOKIE } from "@/lib/constants";
 import { logActivity } from "@/lib/logs";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
+  const ip = clientIp(request);
   try {
+    if (isLoginThrottled(ip)) {
+      return NextResponse.json(
+        { error: "Trop de tentatives de connexion. Réessayez dans 15 minutes." },
+        { status: 429, headers: { "Retry-After": "900" } },
+      );
+    }
     const body = (await request.json()) as { username?: string; password?: string };
     const username = body.username?.trim() ?? "";
     const password = body.password ?? "";
@@ -15,11 +30,13 @@ export async function POST(request: Request) {
     }
     const admin = await authenticate(username, password);
     if (!admin) {
+      registerLoginFailure(ip);
       return NextResponse.json(
         { error: "Identifiant ou mot de passe incorrect." },
         { status: 401 },
       );
     }
+    clearLoginFailures(ip);
     const token = signSession({
       id: admin.id,
       username: admin.username,
@@ -48,10 +65,9 @@ export async function POST(request: Request) {
     response.cookies.set(SESSION_COOKIE, token, sessionCookieOptions());
     return response;
   } catch (error) {
-    console.error(error);
-    const message = error instanceof Error ? error.message : "Erreur interne lors de la connexion.";
+    console.error("Connexion :", error);
     return NextResponse.json(
-      { error: `Connexion impossible : ${message}` },
+      { error: "Connexion impossible pour le moment. Réessayez plus tard." },
       { status: 500 },
     );
   }

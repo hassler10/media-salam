@@ -6,6 +6,7 @@ import { AppShell, PageHeader } from "@/components/app-shell";
 import { CardScaler, MembershipCard } from "@/components/membership-card";
 import { PrintSheet } from "@/components/print-sheet";
 import { PrintPortal } from "@/components/print-portal";
+import { useBranding } from "@/components/branding-context";
 import { downloadCardPdf } from "@/components/print-card";
 import type { Subscriber } from "@/lib/types";
 import { fullName } from "@/lib/utils";
@@ -21,6 +22,7 @@ function CartesInner() {
   const [showPrint, setShowPrint] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const cardRef = useRef<HTMLDivElement>(null);
+  const { branding } = useBranding();
 
   useEffect(() => {
     void apiFetch("/api/subscribers?photos=1")
@@ -111,6 +113,12 @@ function CartesInner() {
                   <MembershipCard data={selected} />
                 </CardScaler>
               </div>
+              {!branding.publicBaseUrl ? (
+                <div className="alert error">
+                  Le lien de la bibliothèque numérique n’est pas enregistré : le QR code de la carte
+                  restera vide. Saisissez-le dans Super admin — Paramètres.
+                </div>
+              ) : null}
               <div className="form-buttons">
                 <button
                   type="button"

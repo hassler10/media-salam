@@ -5,6 +5,8 @@ import { fail, requireApiUser, requireSuperAdmin } from "@/lib/api-guard";
 import { brandingToMap, mapToBranding, type CardBranding } from "@/lib/branding";
 import { loadBranding } from "@/lib/branding-server";
 import { logActivity } from "@/lib/logs";
+import { clip, isHttpUrl, isImageUpload, MAX_LOGO_CHARS } from "@/lib/validation";
+import { TEXT_KEYS } from "@/lib/branding";
 
 export const dynamic = "force-dynamic";
 
@@ -27,6 +29,22 @@ export async function PUT(request: Request) {
         Object.entries(body).map(([k, v]) => [k, typeof v === "boolean" ? (v ? "1" : "0") : String(v ?? "")]),
       ),
     });
+    if (merged.logoData && !isImageUpload(merged.logoData, MAX_LOGO_CHARS)) {
+      return fail("Logo refusé : image PNG, JPEG, WEBP ou GIF de 1 Mo maximum.");
+    }
+    if (merged.publicBaseUrl) {
+      if (!isHttpUrl(merged.publicBaseUrl)) {
+        return fail("Lien de la bibliothèque invalide : indiquez une adresse commençant par https://");
+      }
+      merged.publicBaseUrl = merged.publicBaseUrl.trim().slice(0, 300);
+    }
+    for (const key of TEXT_KEYS) {
+      merged[key] = clip(merged[key], 120) as never;
+    }
+    const months = Number(merged.defaultValidityMonths);
+    if (!Number.isInteger(months) || months < 1 || months > 60) {
+      return fail("Durée de validité par défaut : entre 1 et 60 mois.");
+    }
     const map = brandingToMap(merged);
     for (const [key, value] of Object.entries(map)) {
       await db.insert(settings).values({ key, value }).onConflictDoUpdate({

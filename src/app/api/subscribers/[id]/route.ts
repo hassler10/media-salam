@@ -40,7 +40,9 @@ export async function PUT(request: Request, ctx: Ctx) {
     return NextResponse.json({ item });
   } catch (error) {
     const err = error as Error & { status?: number };
-    return fail(err.message || "Impossible de modifier l'abonné.", err.status ?? 500);
+    if (err.status && err.status < 500) return fail(err.message, err.status);
+    console.error("Modification d'un abonné :", error);
+    return fail("Impossible de modifier l'abonné.", 500);
   }
 }
 

@@ -56,6 +56,24 @@ export const DEFAULT_BRANDING: CardBranding = {
 
 const BOOL_KEYS = ["showMosque", "showFooterMotto"] as const;
 
+export const TEXT_KEYS: (keyof CardBranding)[] = [
+  "institutionName",
+  "shortName",
+  "titleLine1",
+  "titleLine2",
+  "titleLine3",
+  "tagline",
+  "motto",
+  "bannerLine1",
+  "bannerLine2",
+  "bannerLine3",
+  "photoCaption",
+  "qrHint",
+  "extraLine",
+  "extraFieldLabel",
+  "extraFieldValue",
+];
+
 export function brandingToMap(b: CardBranding): Record<string, string> {
   const map: Record<string, string> = {};
   for (const [key, value] of Object.entries(b)) {

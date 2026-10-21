@@ -127,7 +127,8 @@ export function parseCSV(text: string): string[][] {
 }
 
 export function csvEscape(value: string | null | undefined): string {
-  const v = value ?? "";
+  let v = value ?? "";
+  if (/^[=+\-@\t\r]/.test(v)) v = `'${v}`;
   if (/[",\n]/.test(v)) return `"${v.replace(/"/g, '""')}"`;
   return v;
 }
@@ -147,7 +148,6 @@ export function actionLabel(action: string): string {
     csv_exported: "Export CSV",
     csv_imported: "Import CSV",
     backup_created: "Sauvegarde créée",
-    demo_seeded: "Données de démonstration chargées",
     admin_created: "Compte administrateur créé",
     password_changed: "Mot de passe modifié",
     settings_updated: "Paramètres mis à jour",

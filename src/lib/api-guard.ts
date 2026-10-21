@@ -1,7 +1,28 @@
 import { NextResponse } from "next/server";
+import { headers } from "next/headers";
 import { getSessionUser } from "@/lib/auth";
 
+async function isTrustedOrigin(): Promise<boolean> {
+  try {
+    const store = await headers();
+    const host = store.get("host");
+    const forwardedHost = store.get("x-forwarded-host");
+    const source = store.get("origin") ?? store.get("referer");
+    if (!source || !host) return true;
+    const sourceHost = new URL(source).host;
+    return sourceHost === host || (!!forwardedHost && sourceHost === forwardedHost);
+  } catch {
+    return false;
+  }
+}
+
 export async function requireApiUser() {
+  if (!(await isTrustedOrigin())) {
+    return {
+      user: null,
+      response: NextResponse.json({ error: "Origine non autorisée." }, { status: 403 }),
+    };
+  }
   const user = await getSessionUser();
   if (!user) {
     return {

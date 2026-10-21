@@ -3,6 +3,7 @@ import { db } from "@/db";
 import { subscribers, subscriptionCounter } from "@/db/schema";
 import { SUBSCRIPTION_PREFIX } from "@/lib/constants";
 import type { Gender, Subscriber, SubscriberInput } from "@/lib/types";
+import { isImageUpload, isIsoDate, MAX_PHOTO_CHARS } from "@/lib/validation";
 import { toISODate, toISODateTime, todayISO } from "@/lib/utils";
 
 function mapSubscriber(row: typeof subscribers.$inferSelect): Subscriber {
@@ -123,23 +124,34 @@ export async function getSubscriber(id: number): Promise<Subscriber | null> {
   return rows[0] ? mapSubscriber(rows[0]) : null;
 }
 
-export async function getSubscriberByNumber(numero: string): Promise<Subscriber | null> {
-  const rows = await db
-    .select()
-    .from(subscribers)
-    .where(eq(subscribers.subscriptionNumber, numero))
-    .limit(1);
-  return rows[0] ? mapSubscriber(rows[0]) : null;
-}
-
 export function validateInput(input: SubscriberInput): string | null {
-  if (!input.lastName?.trim()) return "Le nom est obligatoire.";
-  if (!input.firstName?.trim()) return "Les prénoms sont obligatoires.";
+  const lastName = input.lastName?.trim();
+  const firstName = input.firstName?.trim();
+  if (!lastName) return "Le nom est obligatoire.";
+  if (lastName.length > 60) return "Nom trop long (60 caractères maximum).";
+  if (!firstName) return "Les prénoms sont obligatoires.";
+  if (firstName.length > 80) return "Prénoms trop longs (80 caractères maximum).";
   if (input.gender !== "masculin" && input.gender !== "feminin") {
     return "Le sexe doit être Masculin ou Féminin.";
   }
-  if (!input.phone?.trim()) return "Le contact téléphonique est obligatoire.";
-  if (!input.validityDate) return "La date de validité est obligatoire.";
+  const phone = input.phone?.trim();
+  if (!phone) return "Le contact téléphonique est obligatoire.";
+  if (phone.length > 32 || !/^[0-9 +().-]+$/.test(phone)) {
+    return "Contact invalide : chiffres, espaces, + ( ) - uniquement, 32 caractères maximum.";
+  }
+  if ((input.profession?.trim().length ?? 0) > 80) {
+    return "Profession trop longue (80 caractères maximum).";
+  }
+  if ((input.notes?.trim().length ?? 0) > 2000) {
+    return "Notes trop longues (2000 caractères maximum).";
+  }
+  if (!isIsoDate(input.validityDate)) return "Date de validité invalide (format AAAA-MM-JJ).";
+  if (input.registrationDate && !isIsoDate(input.registrationDate)) {
+    return "Date d'enregistrement invalide (format AAAA-MM-JJ).";
+  }
+  if (input.photoData && !isImageUpload(input.photoData, MAX_PHOTO_CHARS)) {
+    return "Photo refusée : image PNG, JPEG, WEBP ou GIF de 2 Mo maximum.";
+  }
   return null;
 }
 
