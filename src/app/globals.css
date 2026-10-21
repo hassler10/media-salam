@@ -20,6 +20,8 @@
   --line: #e4ddd0;
   --paper: #fffcf7;
   --shadow: 0 18px 40px rgba(12, 40, 28, 0.12);
+  --ease-out: cubic-bezier(.22, 1, .36, 1);
+  --ease-spring: cubic-bezier(.34, 1.56, .64, 1);
 }
 
 * { box-sizing: border-box; }
@@ -1049,10 +1051,186 @@ input[type="color"] {
   100% { transform: translateX(50%); }
 }
 
+/* ===== COUCHE DE MOTION (interface) ===== */
+@keyframes riseIn {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes popIn {
+  from { opacity: 0; transform: translateY(12px) scale(.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-10px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+@keyframes goldPulse {
+  0%, 100% { box-shadow: 0 0 0 3px rgba(201, 162, 39, .22); }
+  50% { box-shadow: 0 0 0 7px rgba(201, 162, 39, .07); }
+}
+@keyframes sheenSweep {
+  from { transform: translateX(-130%) skewX(-18deg); }
+  to { transform: translateX(230%) skewX(-18deg); }
+}
+@keyframes logoFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+/* Entrées de page (relancées à chaque navigation, les pages étant remontées) */
+.page-header { animation: riseIn .5s var(--ease-out) both; }
+.stat-grid, .dash-grid, .filters, .toolbar { animation: riseIn .55s var(--ease-out) both; }
+.panel:not(.preview-panel) { animation: riseIn .6s var(--ease-out) both; }
+.stat-card { animation: riseIn .5s var(--ease-out) both; }
+.stat-card:nth-child(2) { animation-delay: .05s; }
+.stat-card:nth-child(3) { animation-delay: .1s; }
+.stat-card:nth-child(4) { animation-delay: .15s; }
+.stat-card:nth-child(5) { animation-delay: .2s; }
+.stat-card:nth-child(6) { animation-delay: .25s; }
+.people-list li { animation: slideInLeft .45s var(--ease-out) both; }
+.people-list li:nth-child(2) { animation-delay: .06s; }
+.people-list li:nth-child(3) { animation-delay: .12s; }
+.people-list li:nth-child(4) { animation-delay: .18s; }
+.people-list li:nth-child(5) { animation-delay: .24s; }
+.data-table tbody tr { animation: fadeIn .4s ease both; }
+.sidebar { animation: slideInLeft .5s var(--ease-out) both; }
+.topbar { animation: fadeIn .5s ease both; }
+.login-card, .verify-card { animation: popIn .6s var(--ease-spring) both; }
+.login-logo, .boot-logo { animation: logoFloat 6s ease-in-out infinite; }
+.alert { animation: riseIn .35s var(--ease-out) both; }
+.modal-backdrop { animation: fadeIn .22s ease both; }
+.modal { animation: popIn .34s var(--ease-spring) both; }
+
+/* Transitions douces */
+.btn, .stat-card, .panel, .nav-link, .pill, .chip, .select-item,
+.data-table tbody tr, .thumb, .row-actions a, .row-actions button {
+  transition:
+    transform .28s var(--ease-out),
+    box-shadow .28s var(--ease-out),
+    background-color .22s ease,
+    border-color .22s ease,
+    color .22s ease;
+}
+
+/* Boutons : élévation + reflet doré qui balaie */
+.btn { position: relative; overflow: hidden; }
+.btn::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 45%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .42), transparent);
+  transform: translateX(-130%) skewX(-18deg);
+  pointer-events: none;
+}
+.btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 22px rgba(12, 40, 28, .18);
+}
+.btn:hover:not(:disabled)::after { animation: sheenSweep .75s var(--ease-out); }
+.btn:active:not(:disabled) { transform: translateY(0) scale(.98); }
+.btn-gold:hover:not(:disabled) { box-shadow: 0 10px 24px rgba(201, 162, 39, .38); }
+
+/* Stats et panneaux */
+.stat-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 16px 34px rgba(12, 40, 28, .18);
+  border-color: rgba(201, 162, 39, .45);
+}
+.panel:hover { box-shadow: 0 22px 50px rgba(12, 40, 28, .16); }
+
+/* Navigation */
+.nav-link { position: relative; }
+.nav-link::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 3px;
+  height: 0;
+  border-radius: 3px;
+  background: var(--gold);
+  transform: translateY(-50%);
+  transition: height .3s var(--ease-spring);
+}
+.nav-link:hover { transform: translateX(4px); }
+.nav-link:hover::before, .nav-link.active::before { height: 62%; }
+
+/* Tableaux */
+.data-table tbody tr:hover {
+  background: rgba(201, 162, 39, .07);
+  box-shadow: inset 3px 0 0 var(--gold);
+}
+.row-actions a, .row-actions button { position: relative; }
+.row-actions a::after, .row-actions button::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -2px;
+  width: 100%;
+  height: 1px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform .26s var(--ease-out);
+}
+.row-actions a:hover::after, .row-actions button:hover::after { transform: scaleX(1); }
+
+/* Chois et miniatures */
+.pill:hover, .chip:hover { transform: translateY(-2px); border-color: rgba(12, 90, 53, .4); }
+.chip-active, .pill.active { transform: none; }
+.select-item:hover { transform: translateX(3px); border-color: rgba(201, 162, 39, .5); }
+.thumb { overflow: hidden; }
+.thumb img { transition: transform .45s var(--ease-out); }
+.thumb:hover img, .card-photo:hover img { transform: scale(1.06); }
+.badge { transition: transform .25s var(--ease-spring); }
+.data-table tbody tr:hover .badge { transform: scale(1.06); }
+
+/* Carte d'abonné en perspective dans l'aperçu */
+.preview-card { perspective: 1200px; }
+.preview-card .membership-card {
+  transition: transform .5s var(--ease-out), box-shadow .5s var(--ease-out);
+  transform-style: preserve-3d;
+}
+.preview-card:hover .membership-card {
+  transform: rotateX(7deg) rotateY(-9deg) translateY(-6px);
+  box-shadow: 0 26px 54px rgba(8, 40, 26, .3);
+}
+
+/* Voyant doré vivant */
+.gold-dot { animation: goldPulse 2.8s ease-in-out infinite; }
+
+/* Focus clavier visible et élégant */
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid rgba(201, 162, 39, .75);
+  outline-offset: 2px;
+  border-radius: 10px;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .animated-bg *,
   .animated-bg {
     animation: none !important;
+  }
+  *, *::before, *::after {
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .001ms !important;
+  }
+  .btn:hover:not(:disabled),
+  .stat-card:hover,
+  .nav-link:hover,
+  .pill:hover,
+  .chip:hover,
+  .select-item:hover,
+  .preview-card:hover .membership-card {
+    transform: none;
   }
 }
 
