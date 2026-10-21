@@ -23,9 +23,3 @@ export const EXPIRY_WARNING_DAYS = 30;
 
 export const SESSION_COOKIE = "bms_session";
 export const SESSION_TTL_MS = 1000 * 60 * 60 * 12;
-
-export const DEFAULT_ADMIN = {
-  username: "bibliothecaire",
-  password: "Salam2026",
-  displayName: "Bibliothécaire",
-};

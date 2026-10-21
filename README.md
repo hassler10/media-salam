@@ -5,26 +5,18 @@ Application de gestion des abonnements et de génération des cartes.
 Hébergement : **Vercel**  
 Déploiement : **GitHub** (chaque `git push` met le site à jour)
 
-## 1. Créer le dépôt GitHub
+## 1. Dépôt GitHub
 
-Sur [github.com/new](https://github.com/new) :
-
-- Nom suggéré : `bibliotheque-salam-cmp`
-- Visibilité : **Private** (données d’abonnés)
-- Ne pas cocher « Add a README »
-
-Puis dans le dossier du projet :
+Le dépôt est déjà en place : **https://github.com/hassler10/media-salam** (privé).
+Premier push effectué — les mises à jour se font simplement par :
 
 ```bash
-git init
 git add .
-git commit -m "Application Bibliothèque Salam — cartes d'abonnement"
-git branch -M main
-git remote add origin https://github.com/VOTRE-COMPTE/bibliotheque-salam-cmp.git
-git push -u origin main
+git commit -m "Description de la modification"
+git push
 ```
 
-Ne jamais envoyer le fichier `.env` (il est ignoré).
+Ne jamais envoyer le fichier `.env` / `.env.local` (ils sont ignorés).
 
 ## 2. Créer la base PostgreSQL (Neon, recommandé avec Vercel)
 
@@ -40,26 +32,31 @@ Vous pouvez aussi utiliser **Vercel Postgres** depuis le tableau de bord Vercel.
 
 1. Compte sur [vercel.com](https://vercel.com) avec le même GitHub
 2. **Add New… → Project**
-3. Importer `bibliotheque-salam-cmp`
+3. Importer `media-salam`
 4. Framework : **Next.js** (détecté automatiquement)
 5. Avant **Deploy**, ouvrir **Environment Variables** :
 
 | Nom | Valeur |
 |---|---|
 | `DATABASE_URL` | l’URL Neon / Vercel Postgres |
-| `SESSION_SECRET` | une longue phrase secrète unique |
+| `SESSION_SECRET` | une longue chaîne aléatoire unique |
+| `SEED_ADMIN_USERNAME` | l’identifiant du 1er compte admin (ex. `bibliothecaire`) |
+| `SEED_ADMIN_PASSWORD` | son mot de passe — **obligatoire au premier déploiement** |
+| `SEED_ADMIN_DISPLAY_NAME` | nom affiché (optionnel) |
 
 Cochez Production, Preview et Development.
 
 6. **Deploy**
 
+⚠️ Sans `SEED_ADMIN_PASSWORD`, aucun compte admin n’est créé et la connexion reste impossible. Le compte n’est créé **que** si la table des administrateurs est vide : ne le laissez pas défini une fois le site en production.
+
 ## 4. Premier accès
 
-URL du type : `https://bibliotheque-salam-cmp.vercel.app`
+URL du type : `https://media-salam.vercel.app`
 
-- Identifiant : `bibliothecaire`
-- Mot de passe : `Salam2026`  
-  **Changez-le dès que possible** (Maintenance → comptes).
+Connectez-vous avec le `SEED_ADMIN_USERNAME` / `SEED_ADMIN_PASSWORD` définis sur Vercel.
+Ces valeurs ne sont dans aucun fichier du dépôt : gardez-les dans votre gestionnaire de mots de passe.
+**Changez-le ensuite** (Maintenance → comptes) puis retirez `SEED_ADMIN_PASSWORD` des variables Vercel.
 
 Les tables se créent automatiquement à la première connexion.
 

@@ -1,13 +1,21 @@
 import { createHmac, randomBytes, scryptSync, timingSafeEqual } from "crypto";
 import { cookies, headers } from "next/headers";
-import { eq, sql } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 import { db } from "@/db";
 import { admins } from "@/db/schema";
-import { DEFAULT_ADMIN, SESSION_COOKIE, SESSION_TTL_MS } from "@/lib/constants";
+import { SESSION_COOKIE, SESSION_TTL_MS } from "@/lib/constants";
 import { ensureSchema } from "@/lib/ensure-schema";
 import type { SessionUser } from "@/lib/types";
 
-const SECRET = process.env.SESSION_SECRET || "bms-salam-plateau-session-2026";
+const SECRET = process.env.SESSION_SECRET;
+
+// Le compte administrateur initial vient de l'environnement : sans
+// SEED_ADMIN_PASSWORD, aucun compte n'est créé automatiquement.
+const SEED_ADMIN = {
+  username: process.env.SEED_ADMIN_USERNAME?.trim() || "bibliothecaire",
+  displayName: process.env.SEED_ADMIN_DISPLAY_NAME?.trim() || "Bibliothécaire",
+  password: process.env.SEED_ADMIN_PASSWORD ?? "",
+};
 
 export function hashPassword(password: string): string {
   const salt = randomBytes(16).toString("hex");
@@ -37,6 +45,11 @@ type SessionPayload = {
 };
 
 export function signSession(user: SessionUser): string {
+  if (!SECRET) {
+    throw Object.assign(new Error("SESSION_SECRET absent : impossible de signer une session."), {
+      status: 500,
+    });
+  }
   const payload: SessionPayload = {
     ...user,
     exp: Date.now() + SESSION_TTL_MS,
@@ -47,7 +60,7 @@ export function signSession(user: SessionUser): string {
 }
 
 export function readSession(token: string | undefined | null): SessionUser | null {
-  if (!token) return null;
+  if (!token || !SECRET) return null;
   const [data, sig] = token.split(".");
   if (!data || !sig) return null;
   const expected = createHmac("sha256", SECRET).update(data).digest("base64url");
@@ -105,18 +118,13 @@ export async function requireSession(): Promise<SessionUser> {
 
 export async function ensureDefaultAdmin(): Promise<void> {
   await ensureSchema();
+  if (!SEED_ADMIN.password) return;
   const existing = await db.select({ id: admins.id }).from(admins).limit(1);
-  if (existing.length > 0) {
-    await db
-      .update(admins)
-      .set({ role: "superadmin" })
-      .where(eq(admins.username, DEFAULT_ADMIN.username));
-    return;
-  }
+  if (existing.length > 0) return;
   await db.insert(admins).values({
-    username: DEFAULT_ADMIN.username,
-    passwordHash: hashPassword(DEFAULT_ADMIN.password),
-    displayName: DEFAULT_ADMIN.displayName,
+    username: SEED_ADMIN.username,
+    passwordHash: hashPassword(SEED_ADMIN.password),
+    displayName: SEED_ADMIN.displayName,
     role: "superadmin",
   });
 }
@@ -132,34 +140,9 @@ export async function findAdminByUsername(username: string) {
 
 export async function authenticate(username: string, password: string) {
   await ensureDefaultAdmin();
-  const normalized = username.trim();
-  let admin = await findAdminByUsername(normalized);
-  const isDemoLogin =
-    normalized.toLowerCase() === DEFAULT_ADMIN.username.toLowerCase() &&
-    password === DEFAULT_ADMIN.password;
-
-  if (!admin && isDemoLogin) {
-    await db.insert(admins).values({
-      username: DEFAULT_ADMIN.username,
-      passwordHash: hashPassword(DEFAULT_ADMIN.password),
-      displayName: DEFAULT_ADMIN.displayName,
-      role: "administrateur",
-    });
-    admin = await findAdminByUsername(DEFAULT_ADMIN.username);
-  }
-
+  const admin = await findAdminByUsername(username.trim());
   if (!admin) return null;
-
-  const ok = verifyPassword(password, admin.passwordHash);
-  if (!ok && isDemoLogin) {
-    await db
-      .update(admins)
-      .set({ passwordHash: hashPassword(DEFAULT_ADMIN.password) })
-      .where(eq(admins.id, admin.id));
-    return admin;
-  }
-  if (!ok) return null;
-  return admin;
+  return verifyPassword(password, admin.passwordHash) ? admin : null;
 }
 
 export function sessionCookieOptions() {

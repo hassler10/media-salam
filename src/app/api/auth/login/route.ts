@@ -16,7 +16,7 @@ export async function POST(request: Request) {
     const admin = await authenticate(username, password);
     if (!admin) {
       return NextResponse.json(
-        { error: "Identifiants incorrects. Utilisez bibliothecaire / Salam2026." },
+        { error: "Identifiant ou mot de passe incorrect." },
         { status: 401 },
       );
     }

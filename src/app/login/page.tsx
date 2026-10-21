@@ -6,12 +6,12 @@ import { AnimatedBg } from "@/components/animated-bg";
 import { CmpLogo } from "@/components/card-graphics";
 import { setClientToken } from "@/lib/client-api";
 import { DEFAULT_BRANDING, logoSrc, type CardBranding } from "@/lib/branding";
-import { DEFAULT_ADMIN, LIBRARY } from "@/lib/constants";
+import { LIBRARY } from "@/lib/constants";
 
 export default function LoginPage() {
   const router = useRouter();
-  const [username, setUsername] = useState(DEFAULT_ADMIN.username);
-  const [password, setPassword] = useState(DEFAULT_ADMIN.password);
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [branding, setBranding] = useState<CardBranding>(DEFAULT_BRANDING);
@@ -62,7 +62,12 @@ export default function LoginPage() {
           {error ? <div className="alert error">{error}</div> : null}
           <label className="field">
             <span>Identifiant</span>
-            <input value={username} onChange={(e) => setUsername(e.target.value)} autoComplete="username" />
+            <input
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              autoComplete="username"
+              placeholder="Identifiant administrateur"
+            />
           </label>
           <label className="field">
             <span>Mot de passe</span>
@@ -77,10 +82,6 @@ export default function LoginPage() {
             {busy ? "Connexion…" : "Accéder à l'administration"}
           </button>
         </form>
-        <p className="login-hint">
-          Compte de démonstration prérempli : <strong>{DEFAULT_ADMIN.username}</strong> /{" "}
-          <strong>{DEFAULT_ADMIN.password}</strong>
-        </p>
       </div>
     </main>
   );
