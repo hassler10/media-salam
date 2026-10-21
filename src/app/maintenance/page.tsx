@@ -13,6 +13,7 @@ export default function MaintenancePage() {
   const [error, setError] = useState<string | null>(null);
   const [publicBaseUrl, setPublicBaseUrl] = useState("");
   const [adminForm, setAdminForm] = useState({ username: "", password: "", displayName: "" });
+  const [pwdForm, setPwdForm] = useState({ currentPassword: "", newPassword: "", confirm: "" });
 
   async function refresh() {
     const [s, a, st] = await Promise.all([
@@ -93,6 +94,30 @@ export default function MaintenancePage() {
     setAdminForm({ username: "", password: "", displayName: "" });
     setMessage("Compte administrateur créé.");
     void refresh();
+  }
+
+  async function changePassword(e: FormEvent) {
+    e.preventDefault();
+    setError(null);
+    if (pwdForm.newPassword !== pwdForm.confirm) {
+      setError("La confirmation ne correspond pas au nouveau mot de passe.");
+      return;
+    }
+    const res = await apiFetch("/api/auth/password", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        currentPassword: pwdForm.currentPassword,
+        newPassword: pwdForm.newPassword,
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      setError(data.error || "Modification impossible.");
+      return;
+    }
+    setPwdForm({ currentPassword: "", newPassword: "", confirm: "" });
+    setMessage("Mot de passe modifié. Utilise-le dès ta prochaine connexion.");
   }
 
   return (
@@ -239,6 +264,44 @@ export default function MaintenancePage() {
             </label>
             <button type="submit" className="btn btn-primary">
               Créer le compte
+            </button>
+          </form>
+        </div>
+        <div className="panel">
+          <h3>Mon mot de passe</h3>
+          <form onSubmit={(e) => void changePassword(e)} className="stack">
+            <label className="field">
+              <span>Mot de passe actuel</span>
+              <input
+                type="password"
+                value={pwdForm.currentPassword}
+                onChange={(e) => setPwdForm((p) => ({ ...p, currentPassword: e.target.value }))}
+                autoComplete="current-password"
+                required
+              />
+            </label>
+            <label className="field">
+              <span>Nouveau mot de passe (8 caractères min.)</span>
+              <input
+                type="password"
+                value={pwdForm.newPassword}
+                onChange={(e) => setPwdForm((p) => ({ ...p, newPassword: e.target.value }))}
+                autoComplete="new-password"
+                required
+              />
+            </label>
+            <label className="field">
+              <span>Confirmer le nouveau mot de passe</span>
+              <input
+                type="password"
+                value={pwdForm.confirm}
+                onChange={(e) => setPwdForm((p) => ({ ...p, confirm: e.target.value }))}
+                autoComplete="new-password"
+                required
+              />
+            </label>
+            <button type="submit" className="btn btn-gold">
+              Modifier mon mot de passe
             </button>
           </form>
         </div>

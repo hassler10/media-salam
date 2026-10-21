@@ -78,6 +78,6 @@ export function mapToBranding(map: Record<string, string>): CardBranding {
   return next;
 }
 
-export function logoSrc(branding: CardBranding): string {
-  return branding.logoData?.trim() ? branding.logoData : "/logo-cmp.png";
+export function logoSrc(branding: CardBranding): string | null {
+  return branding.logoData?.trim() || null;
 }

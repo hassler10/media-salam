@@ -149,6 +149,7 @@ export function actionLabel(action: string): string {
     backup_created: "Sauvegarde créée",
     demo_seeded: "Données de démonstration chargées",
     admin_created: "Compte administrateur créé",
+    password_changed: "Mot de passe modifié",
     settings_updated: "Paramètres mis à jour",
     card_error: "Erreur de génération de carte",
   };

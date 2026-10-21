@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { AppShell, PageHeader } from "@/components/app-shell";
 import { useBranding } from "@/components/branding-context";
 import { CardScaler, MembershipCard } from "@/components/membership-card";
+import { CmpLogo } from "@/components/card-graphics";
 import { apiFetch } from "@/lib/client-api";
 import { DEFAULT_BRANDING, type CardBranding } from "@/lib/branding";
 import { addYearsISO, todayISO } from "@/lib/utils";
@@ -128,8 +129,7 @@ function ParametresInner() {
         <div className="panel form-panel">
           <h3>Logo de la carte</h3>
           <div className="logo-edit">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={form.logoData || "/logo-cmp.png"} alt="Logo actuel" className="logo-edit-preview" />
+            <CmpLogo src={form.logoData} alt="Logo actuel" className="logo-edit-preview" />
             <div>
               <label className="btn btn-ghost">
                 Remplacer le logo

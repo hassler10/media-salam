@@ -7,9 +7,10 @@ export function CmpLogo({
   alt?: string;
   src?: string | null;
 }) {
+  if (!src) return <LibraryLogo className={className} />;
   return (
     // eslint-disable-next-line @next/next/no-img-element
-    <img src={src || "/logo-cmp.png"} alt={alt} className={className} />
+    <img src={src} alt={alt} className={className} />
   );
 }
 

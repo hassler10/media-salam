@@ -56,7 +56,9 @@ URL du type : `https://media-salam.vercel.app`
 
 Connectez-vous avec le `SEED_ADMIN_USERNAME` / `SEED_ADMIN_PASSWORD` définis sur Vercel.
 Ces valeurs ne sont dans aucun fichier du dépôt : gardez-les dans votre gestionnaire de mots de passe.
-**Changez-le ensuite** (Maintenance → comptes) puis retirez `SEED_ADMIN_PASSWORD` des variables Vercel.
+**Changez-le ensuite** : Maintenance → panneau « Mon mot de passe ». Puis retirez `SEED_ADMIN_PASSWORD` des variables Vercel.
+
+Le logo affiché sur les cartes et les écrans est le monogramme dessiné par l’application tant que vous n’avez pas téléversé votre logo (Maintenance est inutile ici : c’est dans **Super admin — Carte → Remplacer le logo**). Un fichier `public/logo-cmp.png` fonctionne aussi, mais le logo téléversé est stocké en base et s’applique partout.
 
 Les tables se créent automatiquement à la première connexion.
 
