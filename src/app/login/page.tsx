@@ -1,0 +1,87 @@
+"use client";
+
+import { FormEvent, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { AnimatedBg } from "@/components/animated-bg";
+import { CmpLogo } from "@/components/card-graphics";
+import { setClientToken } from "@/lib/client-api";
+import { DEFAULT_BRANDING, logoSrc, type CardBranding } from "@/lib/branding";
+import { DEFAULT_ADMIN, LIBRARY } from "@/lib/constants";
+
+export default function LoginPage() {
+  const router = useRouter();
+  const [username, setUsername] = useState(DEFAULT_ADMIN.username);
+  const [password, setPassword] = useState(DEFAULT_ADMIN.password);
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [branding, setBranding] = useState<CardBranding>(DEFAULT_BRANDING);
+
+  useEffect(() => {
+    void fetch("/api/branding")
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.branding) setBranding(d.branding);
+      });
+  }, []);
+
+  async function onSubmit(e?: FormEvent) {
+    e?.preventDefault();
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ username, password }),
+      });
+      const data = (await res.json()) as { error?: string; token?: string };
+      if (!res.ok) {
+        setError(data.error || "Connexion refusée.");
+        return;
+      }
+      if (data.token) setClientToken(data.token);
+      router.replace("/");
+      router.refresh();
+    } catch {
+      setError("Impossible de joindre le serveur.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <main className="login-page">
+      <AnimatedBg variant="immersive" />
+      <div className="login-card">
+        <CmpLogo className="login-logo" alt={branding.shortName} src={logoSrc(branding)} />
+        <p className="eyebrow">Service de Maintenance Numérique</p>
+        <h1>{branding.shortName || LIBRARY.shortName}</h1>
+        <p className="login-sub">{branding.institutionName || LIBRARY.name}</p>
+        <form onSubmit={(e) => void onSubmit(e)} className="login-form">
+          {error ? <div className="alert error">{error}</div> : null}
+          <label className="field">
+            <span>Identifiant</span>
+            <input value={username} onChange={(e) => setUsername(e.target.value)} autoComplete="username" />
+          </label>
+          <label className="field">
+            <span>Mot de passe</span>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              autoComplete="current-password"
+            />
+          </label>
+          <button type="submit" className="btn btn-primary btn-block" disabled={busy}>
+            {busy ? "Connexion…" : "Accéder à l'administration"}
+          </button>
+        </form>
+        <p className="login-hint">
+          Compte de démonstration prérempli : <strong>{DEFAULT_ADMIN.username}</strong> /{" "}
+          <strong>{DEFAULT_ADMIN.password}</strong>
+        </p>
+      </div>
+    </main>
+  );
+}

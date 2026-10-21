@@ -1,0 +1,242 @@
+"use client";
+
+import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from "react";
+import QRCode from "qrcode";
+import { useBranding } from "@/components/branding-context";
+import {
+  BookMarkIcon,
+  IconBriefcase,
+  IconCalendar,
+  IconCard,
+  IconPhone,
+  IconScan,
+  IconUser,
+  CmpLogo,
+  MosqueSkyline,
+  PhotoPlaceholder,
+} from "@/components/card-graphics";
+import { DEFAULT_BRANDING, logoSrc, type CardBranding } from "@/lib/branding";
+import { fitFontMm, formatDateFR } from "@/lib/utils";
+
+export type CardData = {
+  lastName: string;
+  firstName: string;
+  profession?: string | null;
+  phone: string;
+  subscriptionNumber: string;
+  validityDate: string;
+  gender: "masculin" | "feminin";
+  photoData?: string | null;
+};
+
+type Props = {
+  data: CardData;
+  origin?: string;
+  className?: string;
+  branding?: CardBranding;
+};
+
+function Field({
+  icon,
+  label,
+  value,
+  maxChars,
+  base = 1.55,
+}: {
+  icon: ReactNode;
+  label: string;
+  value: string;
+  maxChars: number;
+  base?: number;
+}) {
+  const size = fitFontMm(value, maxChars, base, 1.15);
+  return (
+    <div className="card-field">
+      <span className="card-field-icon">{icon}</span>
+      <span className="card-field-label">{label}&nbsp;:</span>
+      <span className="card-field-value" style={{ fontSize: `${size}mm` }}>
+        {value || "—"}
+      </span>
+    </div>
+  );
+}
+
+export function MembershipCard({ data, origin, className, branding: brandingProp }: Props) {
+  const ctx = useBranding();
+  const branding = brandingProp ?? ctx.branding ?? DEFAULT_BRANDING;
+  const theme = data.gender === "feminin" ? "gray" : "green";
+  const primary = theme === "green" ? branding.malePrimary : branding.femalePrimary;
+  const accent = theme === "green" ? branding.maleAccent : branding.femaleAccent;
+  const mosque = theme === "green" ? "#083820" : "#2A2A2A";
+  const [qr, setQr] = useState<string>("");
+
+  const verifyUrl = useMemo(() => {
+    const base = (
+      branding.publicBaseUrl ||
+      origin ||
+      (typeof window !== "undefined" ? window.location.origin : "")
+    ).replace(/\/$/, "");
+    const numero = data.subscriptionNumber || "BSN-000000";
+    return `${base}/verifier/${encodeURIComponent(numero)}`;
+  }, [origin, data.subscriptionNumber, branding.publicBaseUrl]);
+
+  useEffect(() => {
+    let cancelled = false;
+    QRCode.toDataURL(verifyUrl, {
+      width: 320,
+      margin: 1,
+      errorCorrectionLevel: "M",
+      color: { dark: primary, light: "#FFFFFF" },
+    })
+      .then((url) => {
+        if (!cancelled) setQr(url);
+      })
+      .catch(() => {
+        if (!cancelled) setQr("");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [verifyUrl, primary]);
+
+  const lastName = (data.lastName || "Nom de l'abonné").toUpperCase();
+  const firstName = data.firstName || "Prénoms de l'abonné";
+  const showExtraField = Boolean(branding.extraFieldLabel.trim() && branding.extraFieldValue.trim());
+
+  return (
+    <article
+      className={`membership-card theme-${theme} ${className ?? ""}`}
+      style={
+        {
+          "--c-primary": primary,
+          "--c-primary-dark": primary,
+          "--c-accent": accent,
+          "--c-title": primary,
+          "--c-icon": primary,
+          "--c-photo-border": primary,
+          "--c-mosque": mosque,
+        } as CSSProperties
+      }
+    >
+      <div className="card-pattern" />
+      <header className="card-header">
+        <div className="card-brand">
+          <CmpLogo className="card-logo" alt={branding.shortName} src={logoSrc(branding)} />
+          <div className="card-titles">
+            {branding.titleLine1 ? <h1>{branding.titleLine1}</h1> : null}
+            {branding.titleLine2 ? <h2>{branding.titleLine2}</h2> : null}
+            {branding.titleLine3 ? <h2>{branding.titleLine3}</h2> : null}
+            {branding.tagline ? <p className="card-tagline">{branding.tagline}</p> : null}
+            {branding.extraLine ? <p className="card-extra-line">{branding.extraLine}</p> : null}
+          </div>
+        </div>
+        <div className="card-banner">
+          <div className="card-banner-gold" />
+          <div className="card-banner-text">
+            {branding.bannerLine1 ? <span>{branding.bannerLine1}</span> : null}
+            {branding.bannerLine2 ? <span>{branding.bannerLine2}</span> : null}
+            {branding.bannerLine3 ? <span>{branding.bannerLine3}</span> : null}
+          </div>
+        </div>
+      </header>
+
+      <div className="card-body">
+        <div className="card-photo-col">
+          <div className="card-photo">
+            {data.photoData ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={data.photoData} alt="Photo d'identité" />
+            ) : (
+              <PhotoPlaceholder className="card-photo-placeholder" />
+            )}
+          </div>
+          {branding.photoCaption ? <p className="card-photo-caption">{branding.photoCaption}</p> : null}
+        </div>
+
+        <div className="card-fields">
+          <Field icon={<IconUser />} label="Nom" value={lastName} maxChars={18} />
+          <Field icon={<IconUser />} label="Prénoms" value={firstName} maxChars={20} />
+          <Field icon={<IconBriefcase />} label="Profession" value={data.profession || "—"} maxChars={22} />
+          <Field icon={<IconPhone />} label="Contact" value={data.phone || "—"} maxChars={22} />
+          {showExtraField ? (
+            <Field
+              icon={<IconCard />}
+              label={branding.extraFieldLabel}
+              value={branding.extraFieldValue}
+              maxChars={20}
+            />
+          ) : null}
+          <Field
+            icon={<IconCard />}
+            label="N° d'abonnement"
+            value={data.subscriptionNumber || "BSN-AAAA-000000"}
+            maxChars={20}
+          />
+          <Field
+            icon={<IconCalendar />}
+            label="Date de validité"
+            value={data.validityDate ? formatDateFR(data.validityDate) : "—"}
+            maxChars={14}
+          />
+        </div>
+
+        <div className="card-qr-col">
+          <div className="card-qr">
+            {qr ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={qr} alt="QR code d'abonnement" />
+            ) : (
+              <div className="card-qr-empty" />
+            )}
+          </div>
+          {branding.qrHint ? (
+            <p className="card-qr-hint">
+              <span className="card-qr-scan">
+                <IconScan />
+              </span>
+              {branding.qrHint}
+            </p>
+          ) : null}
+        </div>
+      </div>
+
+      <footer className="card-footer">
+        <svg className="card-gold-curve" viewBox="0 0 856 54" preserveAspectRatio="none" aria-hidden="true">
+          <path d="M0 38 C180 8, 420 8, 620 28 S780 48, 856 22 L856 54 L0 54 Z" fill={primary} />
+          <path d="M0 36 C180 6, 420 6, 620 26 S780 46, 856 20" fill="none" stroke={accent} strokeWidth="3.2" />
+        </svg>
+        {branding.showFooterMotto ? (
+          <div className="card-footer-content">
+            <span className="card-footer-book">
+              <BookMarkIcon />
+            </span>
+            <span className="card-footer-motto">{branding.motto}</span>
+          </div>
+        ) : null}
+        {branding.showMosque ? <MosqueSkyline className="card-mosque" color={mosque} /> : null}
+      </footer>
+    </article>
+  );
+}
+
+export function CardScaler({
+  children,
+  scale = 1,
+}: {
+  children: ReactNode;
+  scale?: number;
+}) {
+  return (
+    <div
+      className="card-scaler"
+      style={{
+        width: `${85.6 * scale}mm`,
+        height: `${53.98 * scale}mm`,
+      }}
+    >
+      <div className="card-scaler-inner" style={{ transform: `scale(${scale})` }}>
+        {children}
+      </div>
+    </div>
+  );
+}
