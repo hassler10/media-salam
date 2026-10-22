@@ -6,7 +6,14 @@ import { useBranding } from "@/components/branding-context";
 import { CardScaler, MembershipCard } from "@/components/membership-card";
 import { CmpLogo } from "@/components/card-graphics";
 import { apiFetch } from "@/lib/client-api";
-import { DEFAULT_BRANDING, type CardBranding } from "@/lib/branding";
+import {
+  ALIGNMENTS,
+  CARD_FONTS,
+  CARD_STYLES,
+  DEFAULT_BRANDING,
+  designDefaults,
+  type CardBranding,
+} from "@/lib/branding";
 import { addYearsISO, todayISO } from "@/lib/utils";
 
 const SAMPLE = {
@@ -19,6 +26,33 @@ const SAMPLE = {
   gender: "masculin" as const,
   photoData: null as string | null,
 };
+
+function Slider({
+  label,
+  value,
+  min,
+  max,
+  step,
+  unit,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  min: number;
+  max: number;
+  step: number;
+  unit: string;
+  onChange: (v: string) => void;
+}) {
+  return (
+    <label className="field">
+      <span>
+        {label} <b className="slider-value">{value}{unit}</b>
+      </span>
+      <input type="range" min={min} max={max} step={step} value={value} onChange={(e) => onChange(e.target.value)} />
+    </label>
+  );
+}
 
 export default function ParametresPage() {
   return (
@@ -43,6 +77,11 @@ function ParametresInner() {
 
   function update<K extends keyof CardBranding>(key: K, value: CardBranding[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
+  }
+
+  function resetDesign() {
+    setForm((prev) => ({ ...prev, ...designDefaults() }));
+    setMessage("Design de la carte remis aux réglages d'origine. Clique sur Enregistrer pour l'appliquer.");
   }
 
   function onLogo(file?: File) {
@@ -265,6 +304,180 @@ function ParametresInner() {
             </label>
           </div>
 
+          <h3>Police et style de la carte</h3>
+          <div className="grid-2">
+            <label className="field">
+              <span>Style</span>
+              <select value={form.cardStyle} onChange={(e) => update("cardStyle", e.target.value)}>
+                {CARD_STYLES.map((s) => (
+                  <option key={s.value} value={s.value}>
+                    {s.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="field">
+              <span>Police d&apos;écriture</span>
+              <select value={form.fontFamily} onChange={(e) => update("fontFamily", e.target.value)}>
+                {CARD_FONTS.map((f) => (
+                  <option key={f.value} value={f.value}>
+                    {f.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="field">
+              <span>Alignement des titres</span>
+              <select value={form.titleAlign} onChange={(e) => update("titleAlign", e.target.value)}>
+                {ALIGNMENTS.map((a) => (
+                  <option key={a.value} value={a.value}>
+                    {a.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="field">
+              <span>Alignement des informations</span>
+              <select value={form.fieldsAlign} onChange={(e) => update("fieldsAlign", e.target.value)}>
+                {ALIGNMENTS.map((a) => (
+                  <option key={a.value} value={a.value}>
+                    {a.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <Slider
+              label="Coins arrondis"
+              value={form.cornerRadius}
+              min={0}
+              max={5}
+              step={0.2}
+              unit=" mm"
+              onChange={(v) => update("cornerRadius", v)}
+            />
+            <Slider
+              label="Intensité du motif de fond"
+              value={form.patternOpacity}
+              min={0}
+              max={1}
+              step={0.05}
+              unit=""
+              onChange={(v) => update("patternOpacity", v)}
+            />
+          </div>
+          <label className="field">
+            <span>Couleur de fond de la carte</span>
+            <input
+              type="color"
+              value={form.cardBackground}
+              onChange={(e) => update("cardBackground", e.target.value)}
+            />
+          </label>
+
+          <h3>Taille des écritures</h3>
+          <p className="muted">1 = taille d&apos;origine. L&apos;aperçu de droite suit vos réglages en direct.</p>
+          <div className="grid-2">
+            <Slider
+              label="Titres de l'en-tête"
+              value={form.titleScale}
+              min={0.7}
+              max={1.6}
+              step={0.05}
+              unit="×"
+              onChange={(v) => update("titleScale", v)}
+            />
+            <Slider
+              label="Nom, prénoms, contact…"
+              value={form.fieldScale}
+              min={0.7}
+              max={1.6}
+              step={0.05}
+              unit="×"
+              onChange={(v) => update("fieldScale", v)}
+            />
+            <Slider
+              label="Bandeau ABONNEMENT"
+              value={form.bannerScale}
+              min={0.7}
+              max={1.6}
+              step={0.05}
+              unit="×"
+              onChange={(v) => update("bannerScale", v)}
+            />
+            <Slider
+              label="Légendes et mention du bas"
+              value={form.hintScale}
+              min={0.7}
+              max={1.8}
+              step={0.05}
+              unit="×"
+              onChange={(v) => update("hintScale", v)}
+            />
+          </div>
+          <Slider
+            label="Taille du QR code"
+            value={form.qrScale}
+            min={0.7}
+            max={1.4}
+            step={0.05}
+            unit="×"
+            onChange={(v) => update("qrScale", v)}
+          />
+
+          <h3>Position des éléments</h3>
+          <p className="muted">Décalez chaque bloc de quelques millimètres, en positif ou en négatif.</p>
+          <div className="grid-2">
+            <Slider
+              label="En-tête (logo et titres)"
+              value={form.headerOffsetY}
+              min={-4}
+              max={6}
+              step={0.2}
+              unit=" mm"
+              onChange={(v) => update("headerOffsetY", v)}
+            />
+            <Slider
+              label="Informations — hauteur"
+              value={form.fieldsOffsetY}
+              min={-6}
+              max={8}
+              step={0.2}
+              unit=" mm"
+              onChange={(v) => update("fieldsOffsetY", v)}
+            />
+            <Slider
+              label="Informations — horizontalement"
+              value={form.fieldsOffsetX}
+              min={-8}
+              max={8}
+              step={0.2}
+              unit=" mm"
+              onChange={(v) => update("fieldsOffsetX", v)}
+            />
+            <Slider
+              label="Photo"
+              value={form.photoOffsetY}
+              min={-6}
+              max={8}
+              step={0.2}
+              unit=" mm"
+              onChange={(v) => update("photoOffsetY", v)}
+            />
+            <Slider
+              label="QR code"
+              value={form.qrOffsetY}
+              min={-6}
+              max={8}
+              step={0.2}
+              unit=" mm"
+              onChange={(v) => update("qrOffsetY", v)}
+            />
+          </div>
+          <button type="button" className="btn btn-ghost" onClick={resetDesign}>
+            Revenir au design d&apos;origine
+          </button>
+
+          <h3>Affichage</h3>
           <label className="check">
             <input
               type="checkbox"

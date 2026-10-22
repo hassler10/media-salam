@@ -15,7 +15,15 @@ import {
   MosqueSkyline,
   PhotoPlaceholder,
 } from "@/components/card-graphics";
-import { DEFAULT_BRANDING, logoSrc, type CardBranding } from "@/lib/branding";
+import {
+  ALIGN_VALUES,
+  DEFAULT_BRANDING,
+  STYLE_VALUES,
+  cssFontFamily,
+  logoSrc,
+  num,
+  type CardBranding,
+} from "@/lib/branding";
 import { fitFontMm, formatDateFR } from "@/lib/utils";
 
 export type CardData = {
@@ -41,14 +49,16 @@ function Field({
   value,
   maxChars,
   base = 1.55,
+  scale = 1,
 }: {
   icon: ReactNode;
   label: string;
   value: string;
   maxChars: number;
   base?: number;
+  scale?: number;
 }) {
-  const size = fitFontMm(value, maxChars, base, 1.15);
+  const size = fitFontMm(value, maxChars, base * scale, 1.05 * scale);
   return (
     <div className="card-field">
       <span className="card-field-icon">{icon}</span>
@@ -68,6 +78,41 @@ export function MembershipCard({ data, className, branding: brandingProp }: Prop
   const accent = theme === "green" ? branding.maleAccent : branding.femaleAccent;
   const mosque = theme === "green" ? "#083820" : "#2A2A2A";
   const [qr, setQr] = useState<string>("");
+
+  const fieldScale = num(branding, "fieldScale", 1);
+  const cardStyle = (STYLE_VALUES as readonly string[]).includes(branding.cardStyle)
+    ? branding.cardStyle
+    : "classique";
+
+  const cardVars = {
+    "--c-primary": primary,
+    "--c-primary-dark": primary,
+    "--c-accent": accent,
+    "--c-title": primary,
+    "--c-icon": primary,
+    "--c-photo-border": primary,
+    "--c-mosque": mosque,
+    "--c-font": cssFontFamily(branding),
+    "--c-card-bg": /^#[0-9a-f]{3,8}$/i.test(branding.cardBackground) ? branding.cardBackground : "#ffffff",
+    "--s-title": num(branding, "titleScale", 1),
+    "--s-field": fieldScale,
+    "--s-banner": num(branding, "bannerScale", 1),
+    "--s-hint": num(branding, "hintScale", 1),
+    "--s-qr": num(branding, "qrScale", 1),
+    "--o-header-y": `${num(branding, "headerOffsetY", 0)}mm`,
+    "--o-fields-y": `${num(branding, "fieldsOffsetY", 0)}mm`,
+    "--o-fields-x": `${num(branding, "fieldsOffsetX", 0)}mm`,
+    "--o-photo-y": `${num(branding, "photoOffsetY", 0)}mm`,
+    "--o-qr-y": `${num(branding, "qrOffsetY", 0)}mm`,
+    "--title-align": (ALIGN_VALUES as readonly string[]).includes(branding.titleAlign)
+      ? branding.titleAlign
+      : "left",
+    "--fields-align": (ALIGN_VALUES as readonly string[]).includes(branding.fieldsAlign)
+      ? branding.fieldsAlign
+      : "left",
+    "--card-radius": `${num(branding, "cornerRadius", 2.6)}mm`,
+    "--pattern-opacity": num(branding, "patternOpacity", 0.9),
+  } as CSSProperties;
 
   const libraryUrl = useMemo(() => {
     const base = branding.publicBaseUrl.trim();
@@ -101,17 +146,8 @@ export function MembershipCard({ data, className, branding: brandingProp }: Prop
   return (
     <article
       className={`membership-card theme-${theme} ${className ?? ""}`}
-      style={
-        {
-          "--c-primary": primary,
-          "--c-primary-dark": primary,
-          "--c-accent": accent,
-          "--c-title": primary,
-          "--c-icon": primary,
-          "--c-photo-border": primary,
-          "--c-mosque": mosque,
-        } as CSSProperties
-      }
+      data-style={cardStyle}
+      style={cardVars}
     >
       <div className="card-pattern" />
       <header className="card-header">
@@ -149,16 +185,29 @@ export function MembershipCard({ data, className, branding: brandingProp }: Prop
         </div>
 
         <div className="card-fields">
-          <Field icon={<IconUser />} label="Nom" value={lastName} maxChars={18} />
-          <Field icon={<IconUser />} label="Prénoms" value={firstName} maxChars={20} />
-          <Field icon={<IconBriefcase />} label="Profession" value={data.profession || "—"} maxChars={22} />
-          <Field icon={<IconPhone />} label="Contact" value={data.phone || "—"} maxChars={22} />
+          <Field icon={<IconUser />} label="Nom" value={lastName} maxChars={18} scale={fieldScale} />
+          <Field icon={<IconUser />} label="Prénoms" value={firstName} maxChars={20} scale={fieldScale} />
+          <Field
+            icon={<IconBriefcase />}
+            label="Profession"
+            value={data.profession || "—"}
+            maxChars={22}
+            scale={fieldScale}
+          />
+          <Field
+            icon={<IconPhone />}
+            label="Contact"
+            value={data.phone || "—"}
+            maxChars={22}
+            scale={fieldScale}
+          />
           {showExtraField ? (
             <Field
               icon={<IconCard />}
               label={branding.extraFieldLabel}
               value={branding.extraFieldValue}
               maxChars={20}
+              scale={fieldScale}
             />
           ) : null}
           <Field
@@ -166,12 +215,14 @@ export function MembershipCard({ data, className, branding: brandingProp }: Prop
             label="N° d'abonnement"
             value={data.subscriptionNumber || "BSN-AAAA-000000"}
             maxChars={20}
+            scale={fieldScale}
           />
           <Field
             icon={<IconCalendar />}
             label="Date de validité"
             value={data.validityDate ? formatDateFR(data.validityDate) : "—"}
             maxChars={14}
+            scale={fieldScale}
           />
         </div>
 

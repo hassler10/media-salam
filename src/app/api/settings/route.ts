@@ -2,7 +2,18 @@ import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { settings } from "@/db/schema";
 import { fail, requireApiUser, requireSuperAdmin } from "@/lib/api-guard";
-import { brandingToMap, mapToBranding, type CardBranding } from "@/lib/branding";
+import {
+  ALIGN_VALUES,
+  CARD_COLORS,
+  clampNumber,
+  DEFAULT_BRANDING,
+  FONT_VALUES,
+  NUMBER_LIMITS,
+  STYLE_VALUES,
+  brandingToMap,
+  mapToBranding,
+  type CardBranding,
+} from "@/lib/branding";
 import { loadBranding } from "@/lib/branding-server";
 import { logActivity } from "@/lib/logs";
 import { clip, isHttpUrl, isImageUpload, MAX_LOGO_CHARS } from "@/lib/validation";
@@ -44,6 +55,28 @@ export async function PUT(request: Request) {
     const months = Number(merged.defaultValidityMonths);
     if (!Number.isInteger(months) || months < 1 || months > 60) {
       return fail("Durée de validité par défaut : entre 1 et 60 mois.");
+    }
+    if (!(FONT_VALUES as readonly string[]).includes(merged.fontFamily)) {
+      merged.fontFamily = DEFAULT_BRANDING.fontFamily;
+    }
+    if (!(STYLE_VALUES as readonly string[]).includes(merged.cardStyle)) {
+      merged.cardStyle = DEFAULT_BRANDING.cardStyle;
+    }
+    if (!(ALIGN_VALUES as readonly string[]).includes(merged.titleAlign)) {
+      merged.titleAlign = DEFAULT_BRANDING.titleAlign;
+    }
+    if (!(ALIGN_VALUES as readonly string[]).includes(merged.fieldsAlign)) {
+      merged.fieldsAlign = DEFAULT_BRANDING.fieldsAlign;
+    }
+    for (const key of Object.keys(NUMBER_LIMITS) as (keyof CardBranding)[]) {
+      const clamped = clampNumber(merged[key], key as string);
+      if (clamped === null) return fail("Réglage de carte non numérique : " + key);
+      merged[key] = clamped as never;
+    }
+    for (const key of CARD_COLORS) {
+      if (!/^#[0-9a-f]{6}$/i.test(merged[key])) {
+        return fail(`Couleur invalide : ${key}.`);
+      }
     }
     const map = brandingToMap(merged);
     for (const [key, value] of Object.entries(map)) {
