@@ -1,12 +1,14 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { AppShell, PageHeader } from "@/components/app-shell";
 import type { AdminAccount, MaintenanceStatus } from "@/lib/types";
 import { formatDateTimeFR } from "@/lib/utils";
 import { apiFetch } from "@/lib/client-api";
 
 export default function MaintenancePage() {
+  const router = useRouter();
   const [status, setStatus] = useState<MaintenanceStatus | null>(null);
   const [admins, setAdmins] = useState<AdminAccount[]>([]);
   const [message, setMessage] = useState<string | null>(null);
@@ -30,8 +32,17 @@ export default function MaintenancePage() {
     void refresh();
   }, []);
 
+  async function readError(res: Response) {
+    const data = (await res.json().catch(() => ({}))) as { error?: string };
+    setError(data.error || "Opération refusée par le serveur.");
+  }
+
   async function exportCsv() {
     const res = await apiFetch("/api/subscribers/export");
+    if (!res.ok) {
+      await readError(res);
+      return;
+    }
     const blob = await res.blob();
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -44,6 +55,10 @@ export default function MaintenancePage() {
 
   async function backup() {
     const res = await apiFetch("/api/backup");
+    if (!res.ok) {
+      await readError(res);
+      return;
+    }
     const data = await res.json();
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
@@ -123,7 +138,8 @@ export default function MaintenancePage() {
       return;
     }
     setPwdForm({ currentPassword: "", newPassword: "", confirm: "" });
-    setMessage("Mot de passe modifié. Utilise-le dès ta prochaine connexion.");
+    // La session est révoquée par le serveur : on repart de la connexion.
+    router.replace("/login");
   }
 
   return (

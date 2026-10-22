@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
-import { requireApiUser } from "@/lib/api-guard";
+import { fail, requireApiUser } from "@/lib/api-guard";
+import { overLimit } from "@/lib/guard";
+import { HEAVY_READ_LIMITS } from "@/lib/constants";
 import { logActivity } from "@/lib/logs";
 import { listSubscribers } from "@/lib/subscribers";
 import { csvEscape } from "@/lib/utils";
@@ -9,6 +11,15 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   const { user, response } = await requireApiUser();
   if (!user) return response;
+  if (
+    await overLimit(
+      `csvExport:${user.username}`,
+      HEAVY_READ_LIMITS.csvExport.max,
+      HEAVY_READ_LIMITS.csvExport.windowMs,
+    )
+  ) {
+    return fail("Trop d'exports à la suite. Réessayez dans une minute.", 429);
+  }
   const items = await listSubscribers({ includePhoto: false });
   const header = [
     "numero",

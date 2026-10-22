@@ -31,7 +31,7 @@ export async function PUT(request: Request, ctx: Ctx) {
     for (const action of actions) {
       await logActivity({
         action,
-        details: `${item.lastName} ${item.firstName} — ${item.subscriptionNumber}`,
+        details: `Abonné ${item.subscriptionNumber}`,
         entityType: "subscriber",
         entityId: item.id,
         actor: user.username,
@@ -55,7 +55,7 @@ export async function DELETE(_request: Request, ctx: Ctx) {
   await deleteSubscriber(Number(id));
   await logActivity({
     action: "subscriber_deleted",
-    details: `${item.lastName} ${item.firstName} — ${item.subscriptionNumber}`,
+    details: `Abonné ${item.subscriptionNumber} supprimé`,
     entityType: "subscriber",
     entityId: item.id,
     actor: user.username,

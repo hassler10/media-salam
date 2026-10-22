@@ -66,3 +66,16 @@ export const cardErrors = pgTable("card_errors", {
   message: text("message").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
+
+/** Compteur d'événements par clé, en base pour rester fiable d'une instance à l'autre. */
+export const guardEntries = pgTable("guard_entries", {
+  key: varchar("key", { length: 120 }).primaryKey(),
+  count: integer("count").notNull().default(1),
+  startedAt: timestamp("started_at").notNull(),
+});
+
+/** Sessions déclarées mortes avant leur expiration (déconnexion, mot de passe changé). */
+export const revokedSessions = pgTable("revoked_sessions", {
+  jti: varchar("jti", { length: 32 }).primaryKey(),
+  expiresAt: timestamp("expires_at").notNull(),
+});

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getSessionUser, sessionCookieOptions } from "@/lib/auth";
+import { getSessionUser, revokeCurrentSession, sessionCookieOptions } from "@/lib/auth";
 import { SESSION_COOKIE } from "@/lib/constants";
 import { isTrustedOrigin } from "@/lib/api-guard";
 import { logActivity } from "@/lib/logs";
@@ -18,6 +18,7 @@ export async function POST() {
       actor: user.username,
     });
   }
+  await revokeCurrentSession();
   const response = NextResponse.json({ ok: true });
   response.cookies.set(SESSION_COOKIE, "", { ...sessionCookieOptions(), maxAge: 0 });
   return response;

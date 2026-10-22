@@ -1,7 +1,17 @@
 import { sql } from "drizzle-orm";
 import { db } from "@/db";
 
-export async function ensureSchema() {
+let done: Promise<void> | null = null;
+
+export function ensureSchema(): Promise<void> {
+  done ??= createSchema().catch((error) => {
+    done = null;
+    throw error;
+  });
+  return done;
+}
+
+async function createSchema() {
   await db.execute(sql`
     CREATE TABLE IF NOT EXISTS admins (
       id serial PRIMARY KEY,
@@ -62,6 +72,19 @@ export async function ensureSchema() {
       subscription_number varchar(32),
       message text NOT NULL,
       created_at timestamp NOT NULL DEFAULT now()
+    )
+  `);
+  await db.execute(sql`
+    CREATE TABLE IF NOT EXISTS guard_entries (
+      key varchar(120) PRIMARY KEY,
+      count integer NOT NULL DEFAULT 1,
+      started_at timestamp NOT NULL
+    )
+  `);
+  await db.execute(sql`
+    CREATE TABLE IF NOT EXISTS revoked_sessions (
+      jti varchar(32) PRIMARY KEY,
+      expires_at timestamp NOT NULL
     )
   `);
 }

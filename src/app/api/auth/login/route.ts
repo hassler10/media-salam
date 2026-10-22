@@ -10,6 +10,7 @@ import {
 } from "@/lib/auth";
 import { SESSION_COOKIE } from "@/lib/constants";
 import { isTrustedOrigin } from "@/lib/api-guard";
+import { ensureSchema } from "@/lib/ensure-schema";
 import { logActivity } from "@/lib/logs";
 
 export const dynamic = "force-dynamic";
@@ -20,7 +21,9 @@ export async function POST(request: Request) {
     if (!(await isTrustedOrigin())) {
       return NextResponse.json({ error: "Origine non autorisée." }, { status: 403 });
     }
-    if (isLoginThrottled(ip)) {
+    // Le compteur de tentatives vit en base : la table doit exister avant le premier essai.
+    await ensureSchema();
+    if (await isLoginThrottled(ip)) {
       return NextResponse.json(
         { error: "Trop de tentatives de connexion. Réessayez dans 15 minutes." },
         { status: 429, headers: { "Retry-After": "900" } },
@@ -34,13 +37,13 @@ export async function POST(request: Request) {
     }
     const admin = await authenticate(username, password);
     if (!admin) {
-      registerLoginFailure(ip);
+      await registerLoginFailure(ip);
       return NextResponse.json(
         { error: "Identifiant ou mot de passe incorrect." },
         { status: 401 },
       );
     }
-    clearLoginFailures(ip);
+    await clearLoginFailures(ip);
     const token = signSession({
       id: admin.id,
       username: admin.username,

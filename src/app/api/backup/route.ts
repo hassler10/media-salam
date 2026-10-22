@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { activityLogs, admins, cardErrors, settings, subscribers, subscriptionCounter } from "@/db/schema";
 import { fail, requireSuperAdmin } from "@/lib/api-guard";
+import { overLimit } from "@/lib/guard";
+import { HEAVY_READ_LIMITS } from "@/lib/constants";
 import { logActivity } from "@/lib/logs";
 
 export const dynamic = "force-dynamic";
@@ -10,6 +12,15 @@ export async function GET() {
   const { user, response } = await requireSuperAdmin();
   if (!user) return response;
   try {
+    if (
+      await overLimit(
+        `backup:${user.username}`,
+        HEAVY_READ_LIMITS.backup.max,
+        HEAVY_READ_LIMITS.backup.windowMs,
+      )
+    ) {
+      return fail("Trop de sauvegardes à la suite. Réessayez dans une minute.", 429);
+    }
     const [subs, logs, ads, errs, sets, counters] = await Promise.all([
       db.select().from(subscribers),
       db.select().from(activityLogs),

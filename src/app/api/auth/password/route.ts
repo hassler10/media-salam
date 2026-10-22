@@ -3,7 +3,7 @@ import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { admins } from "@/db/schema";
 import { fail, requireApiUser } from "@/lib/api-guard";
-import { findAdminByUsername, hashPassword, verifyPassword } from "@/lib/auth";
+import { findAdminByUsername, hashPassword, revokeCurrentSession, verifyPassword } from "@/lib/auth";
 import { logActivity } from "@/lib/logs";
 
 export const dynamic = "force-dynamic";
@@ -32,6 +32,8 @@ export async function POST(request: Request) {
       .update(admins)
       .set({ passwordHash: hashPassword(newPassword) })
       .where(eq(admins.id, admin.id));
+    // Le mot de passe change : la session en cours ne doit pas survivre.
+    await revokeCurrentSession();
     await logActivity({
       action: "password_changed",
       details: `Mot de passe du compte ${admin.username} modifié.`,

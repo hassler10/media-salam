@@ -27,3 +27,10 @@ export const SESSION_TTL_MS = 1000 * 60 * 60 * 12;
 /** En-tête applicatif prouvant une requête émise par l'interface (anti-CSRF). */
 export const APP_REQUEST_HEADER = "x-app-request";
 export const APP_REQUEST_VALUE = "media-salam";
+
+/** Appels autorisés par minute et par compte pour les sorties lourdes de données. */
+export const HEAVY_READ_LIMITS = {
+  backup: { max: 3, windowMs: 60_000 },
+  csvExport: { max: 3, windowMs: 60_000 },
+  photos: { max: 30, windowMs: 60_000 },
+} as const;
