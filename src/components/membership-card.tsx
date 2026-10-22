@@ -18,6 +18,7 @@ import {
   ALIGN_VALUES,
   DEFAULT_BRANDING,
   STYLE_VALUES,
+  cardScale,
   cssFontFamily,
   hexToRgba,
   logoSrc,
@@ -113,6 +114,7 @@ export function MembershipCard({ data, className, branding: brandingProp }: Prop
       : "left",
     "--card-radius": `${num(branding, "cornerRadius", 2.6)}mm`,
     "--pattern-opacity": num(branding, "patternOpacity", 0.9),
+    "--card-scale": cardScale(branding.cardWidth),
   } as CSSProperties;
 
   const libraryUrl = useMemo(() => {
@@ -150,6 +152,7 @@ export function MembershipCard({ data, className, branding: brandingProp }: Prop
       data-style={cardStyle}
       style={cardVars}
     >
+      <div className="card-zoom">
       <div className="card-pattern" />
       <div className="card-banner">
         <div className="card-banner-text">
@@ -261,6 +264,7 @@ export function MembershipCard({ data, className, branding: brandingProp }: Prop
         ) : null}
         {branding.showMosque ? <MosqueSkyline className="card-mosque" color={primary} /> : null}
       </footer>
+      </div>
     </article>
   );
 }
@@ -268,16 +272,20 @@ export function MembershipCard({ data, className, branding: brandingProp }: Prop
 export function CardScaler({
   children,
   scale = 1,
+  size,
 }: {
   children: ReactNode;
   scale?: number;
+  size?: { width: number; height: number };
 }) {
+  const width = size?.width ?? 85.6;
+  const height = size?.height ?? 53.98;
   return (
     <div
       className="card-scaler"
       style={{
-        width: `${85.6 * scale}mm`,
-        height: `${53.98 * scale}mm`,
+        width: `${width * scale}mm`,
+        height: `${height * scale}mm`,
       }}
     >
       <div className="card-scaler-inner" style={{ transform: `scale(${scale})` }}>

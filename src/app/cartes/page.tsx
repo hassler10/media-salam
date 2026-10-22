@@ -8,6 +8,7 @@ import { PrintSheet } from "@/components/print-sheet";
 import { PrintPortal } from "@/components/print-portal";
 import { useBranding } from "@/components/branding-context";
 import { downloadCardPdf } from "@/components/print-card";
+import { cardSizeLabel, cardSizeMm } from "@/lib/branding";
 import type { Subscriber } from "@/lib/types";
 import { fullName } from "@/lib/utils";
 import { apiFetch } from "@/lib/client-api";
@@ -48,6 +49,7 @@ function CartesInner() {
   }, [items, q]);
 
   const selected = items.find((s) => s.id === selectedId) ?? null;
+  const cardSize = cardSizeMm(branding.cardWidth);
 
   async function mark(action: "generate" | "print" | "download") {
     if (!selected) return;
@@ -62,16 +64,16 @@ function CartesInner() {
     if (!selected) return;
     const el = cardRef.current?.querySelector(".membership-card") as HTMLElement | null;
     if (!el) return;
-    await downloadCardPdf(el, `carte-${selected.subscriptionNumber}.pdf`);
+    await downloadCardPdf(el, `carte-${selected.subscriptionNumber}.pdf`, cardSize);
     await mark("download");
-    setMessage("PDF généré à l'échelle réelle.");
+    setMessage(`PDF généré à l'échelle réelle (${cardSizeLabel(branding.cardWidth)}).`);
   }
 
   return (
     <AppShell>
       <PageHeader
         title="Générer une carte"
-        subtitle="Sélectionnez un abonné. Le modèle vert s'applique aux hommes, le modèle gris aux femmes."
+        subtitle="Sélectionnez un abonné. Le modèle vert s'applique aux hommes, le modèle doré aux femmes."
       />
       {message ? <div className="alert success">{message}</div> : null}
       <div className="form-layout">
@@ -92,7 +94,7 @@ function CartesInner() {
                 >
                   <strong>{fullName(s.lastName, s.firstName)}</strong>
                   <span>
-                    {s.subscriptionNumber} · {s.gender === "feminin" ? "Carte grise" : "Carte verte"}
+                    {s.subscriptionNumber} · {s.gender === "feminin" ? "Modèle doré" : "Modèle vert"}
                   </span>
                 </button>
               </li>
@@ -105,14 +107,21 @@ function CartesInner() {
               <div className="preview-head">
                 <h3>{fullName(selected.lastName, selected.firstName)}</h3>
                 <span className={`chip ${selected.gender === "feminin" ? "chip-gold" : "chip-green"}`}>
-                  {selected.gender === "feminin" ? "Féminin — gris" : "Masculin — vert"}
+                  {selected.gender === "feminin" ? "Féminin — modèle doré" : "Masculin — modèle vert"}
                 </span>
               </div>
               <div className="preview-card">
-                <CardScaler scale={1.55}>
+                <CardScaler
+                  scale={Math.min(1.55, 132 / cardSize.width)}
+                  size={cardSize}
+                >
                   <MembershipCard data={selected} />
                 </CardScaler>
               </div>
+              <p className="hint">
+                Dimension d&apos;impression&nbsp;: {cardSizeLabel(branding.cardWidth)}. Réglez-la dans Super
+                admin — Paramètres, section «&nbsp;Dimension de la carte&nbsp;».
+              </p>
               {!branding.publicBaseUrl ? (
                 <div className="alert error">
                   Le lien de la bibliothèque numérique n’est pas enregistré : le QR code de la carte
@@ -163,7 +172,10 @@ function CartesInner() {
             <div className="print-toolbar no-print">
               <div>
                 <strong>Aperçu A4 paysage — taille réelle</strong>
-                <p>Une seule carte, recto, centrée, avec repères de coupe.</p>
+                <p>
+                  Une seule carte, recto, centrée, avec repères de coupe. Carte&nbsp;
+                  {cardSizeLabel(branding.cardWidth)}, papier A4 paysage, échelle 100&nbsp;%.
+                </p>
               </div>
               <button type="button" className="btn btn-ghost" onClick={() => setShowPrint(false)}>
                 Fermer

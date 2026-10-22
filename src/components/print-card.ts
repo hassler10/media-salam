@@ -2,7 +2,13 @@
 
 import { A4_HEIGHT_MM, A4_WIDTH_MM, CARD_HEIGHT_MM, CARD_WIDTH_MM } from "@/lib/constants";
 
-export async function downloadCardPdf(element: HTMLElement, filename: string) {
+export type CardSizeMm = { width: number; height: number };
+
+export async function downloadCardPdf(
+  element: HTMLElement,
+  filename: string,
+  size: CardSizeMm = { width: CARD_WIDTH_MM, height: CARD_HEIGHT_MM },
+) {
   const html2canvas = (await import("html2canvas")).default;
   const { jsPDF } = await import("jspdf");
   const canvas = await html2canvas(element, {
@@ -20,18 +26,18 @@ export async function downloadCardPdf(element: HTMLElement, filename: string) {
   });
   pdf.setFillColor(255, 255, 255);
   pdf.rect(0, 0, A4_WIDTH_MM, A4_HEIGHT_MM, "F");
-  const x = (A4_WIDTH_MM - CARD_WIDTH_MM) / 2;
-  const y = (A4_HEIGHT_MM - CARD_HEIGHT_MM) / 2;
-  pdf.addImage(img, "JPEG", x, y, CARD_WIDTH_MM, CARD_HEIGHT_MM, undefined, "FAST");
+  const x = (A4_WIDTH_MM - size.width) / 2;
+  const y = (A4_HEIGHT_MM - size.height) / 2;
+  pdf.addImage(img, "JPEG", x, y, size.width, size.height, undefined, "FAST");
   const mark = 4;
   const gap = 1.2;
   pdf.setDrawColor(40);
   pdf.setLineWidth(0.15);
   const corners = [
     [x, y],
-    [x + CARD_WIDTH_MM, y],
-    [x, y + CARD_HEIGHT_MM],
-    [x + CARD_WIDTH_MM, y + CARD_HEIGHT_MM],
+    [x + size.width, y],
+    [x, y + size.height],
+    [x + size.width, y + size.height],
   ] as const;
   corners.forEach(([cx, cy], i) => {
     const dirX = i % 2 === 0 ? -1 : 1;

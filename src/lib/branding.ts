@@ -42,6 +42,7 @@ export type CardBranding = {
   cornerRadius: string;
   patternOpacity: string;
   cardBackground: string;
+  cardWidth: string;
 };
 
 export const CARD_FONTS = [
@@ -64,6 +65,40 @@ export const ALIGNMENTS = [
   { value: "center", label: "Centré" },
   { value: "right", label: "À droite" },
 ] as const;
+
+/** Formats physiques proposés en Super admin (largeur en mm, hauteur proportionnelle). */
+export const CARD_FORMATS = [
+  { value: "85.6", label: "Carte bancaire — 85,6 × 54 mm" },
+  { value: "100", label: "Confort — 100 × 63 mm" },
+  { value: "120", label: "Grande — 120 × 76 mm" },
+  { value: "140", label: "Très grande — 140 × 88 mm" },
+] as const;
+
+export const CARD_BASE_WIDTH_MM = 85.6;
+export const CARD_BASE_HEIGHT_MM = 53.98;
+
+/** Échelle physique de la carte : 1 = format carte bancaire. */
+export function cardScale(widthValue: string | number | undefined): number {
+  const width = Number(widthValue);
+  const safe = Number.isFinite(width) ? width : CARD_BASE_WIDTH_MM;
+  return Math.min(2, Math.max(0.8, safe / CARD_BASE_WIDTH_MM));
+}
+
+/** Dimensions réelles imprimées, en millimètres. */
+export function cardSizeMm(widthValue: string | number | undefined): { width: number; height: number } {
+  const scale = cardScale(widthValue);
+  return {
+    width: +(CARD_BASE_WIDTH_MM * scale).toFixed(2),
+    height: +(CARD_BASE_HEIGHT_MM * scale).toFixed(2),
+  };
+}
+
+/** « 85,60 × 53,98 mm » : dimensions affichées à l'utilisateur. */
+export function cardSizeLabel(widthValue: string | number | undefined): string {
+  const { width, height } = cardSizeMm(widthValue);
+  const mm = (n: number) => n.toFixed(2).replace(".", ",");
+  return `${mm(width)} × ${mm(height)} mm`;
+}
 
 export const FONT_VALUES = CARD_FONTS.map((f) => f.value);
 export const STYLE_VALUES = CARD_STYLES.map((s) => s.value);
@@ -118,6 +153,7 @@ export const NUMBER_LIMITS: Record<string, { min: number; max: number }> = {
   qrOffsetY: { min: -6, max: 8 },
   cornerRadius: { min: 0, max: 5 },
   patternOpacity: { min: 0, max: 1 },
+  cardWidth: { min: 68, max: 170 },
 };
 
 export function clampNumber(value: unknown, key: string): string | null {
@@ -199,6 +235,7 @@ export const DEFAULT_BRANDING: CardBranding = {
   cornerRadius: "2.6",
   patternOpacity: "0.9",
   cardBackground: "#ffffff",
+  cardWidth: "85.6",
 };
 
 const BOOL_KEYS = ["showMosque", "showFooterMotto"] as const;

@@ -8,9 +8,12 @@ import { CmpLogo } from "@/components/card-graphics";
 import { apiFetch } from "@/lib/client-api";
 import {
   ALIGNMENTS,
+  CARD_FORMATS,
   CARD_FONTS,
   CARD_STYLES,
   DEFAULT_BRANDING,
+  cardSizeLabel,
+  cardSizeMm,
   designDefaults,
   type CardBranding,
 } from "@/lib/branding";
@@ -47,7 +50,7 @@ function Slider({
   return (
     <label className="field">
       <span>
-        {label} <b className="slider-value">{value}{unit}</b>
+        {label} <b className="slider-value">{value.replace(".", ",")}{unit}</b>
       </span>
       <input type="range" min={min} max={max} step={step} value={value} onChange={(e) => onChange(e.target.value)} />
     </label>
@@ -305,6 +308,44 @@ function ParametresInner() {
             </label>
           </div>
 
+          <h3>Dimension de la carte</h3>
+          <p className="muted">
+            Agrandissez la carte imprimée quand les informations sont trop petites&nbsp;: la photo, les
+            écritures, le QR code et les bordures grossissent dans les mêmes proportions. Le bouton
+            «&nbsp;design d&apos;origine&nbsp;» ne change pas cette dimension.
+          </p>
+          <div className="grid-2">
+            <label className="field">
+              <span>Format</span>
+              <select
+                value={CARD_FORMATS.some((f) => f.value === form.cardWidth) ? form.cardWidth : "custom"}
+                onChange={(e) => {
+                  if (e.target.value !== "custom") update("cardWidth", e.target.value);
+                }}
+              >
+                {CARD_FORMATS.map((f) => (
+                  <option key={f.value} value={f.value}>
+                    {f.label}
+                  </option>
+                ))}
+                <option value="custom">Largeur sur mesure</option>
+              </select>
+            </label>
+            <Slider
+              label="Largeur de la carte"
+              value={form.cardWidth}
+              min={68}
+              max={170}
+              step={0.2}
+              unit=" mm"
+              onChange={(v) => update("cardWidth", v)}
+            />
+          </div>
+          <p className="hint">
+            Carte imprimée&nbsp;: {cardSizeLabel(form.cardWidth)} (hauteur adaptée automatiquement). Le
+            format carte bancaire d&apos;origine est 85,60 × 53,98 mm.
+          </p>
+
           <h3>Police et style de la carte</h3>
           <div className="grid-2">
             <label className="field">
@@ -530,11 +571,15 @@ function ParametresInner() {
               </div>
             </div>
             <div className="preview-card">
-              <CardScaler scale={1.45}>
+              <CardScaler
+                scale={Math.min(1.45, 124 / cardSizeMm(form.cardWidth).width)}
+                size={cardSizeMm(form.cardWidth)}
+              >
                 <MembershipCard data={{ ...SAMPLE, gender: previewGender }} branding={form} />
               </CardScaler>
             </div>
             <p className="hint">
+              Aperçu du design&nbsp;: la carte imprimée mesure réellement {cardSizeLabel(form.cardWidth)}.
               Modifiez à gauche : le rendu change tout de suite. Cliquez sur Enregistrer pour l&apos;appliquer à
               l&apos;impression et aux fiches abonnés.
             </p>

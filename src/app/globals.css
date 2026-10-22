@@ -372,7 +372,7 @@ button, input, select, textarea {
   cursor: pointer;
 }
 .pill.active.green { background: #e8f6ee; border-color: var(--green); color: var(--green-dark); }
-.pill.active.gray { background: #ececec; border-color: #4a4a4a; color: #2d2d2d; }
+.pill.active.gold { background: #f6efdb; border-color: #8c6a15; color: #6e5210; }
 .check { display: flex; gap: 8px; align-items: center; margin: 8px 0 14px; font-size: 14px; }
 .form-buttons { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
 .preview-panel { position: sticky; top: 16px; }
@@ -549,8 +549,8 @@ button, input, select, textarea {
 }
 
 .membership-card {
-  width: 85.6mm;
-  height: 53.98mm;
+  width: calc(85.6mm * var(--card-scale, 1));
+  height: calc(53.98mm * var(--card-scale, 1));
   position: relative;
   overflow: hidden;
   border-radius: var(--card-radius, 2.6mm);
@@ -559,6 +559,16 @@ button, input, select, textarea {
   font-family: var(--c-font, var(--font-sans), "Segoe UI", sans-serif);
   color: #1a1a1a;
   box-shadow: 0 1mm 3mm rgba(0,0,0,.12);
+}
+/* Le dessin de la carte est conçu en 85,6 × 53,98 mm puis agrandi uniformement. */
+.card-zoom {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 85.6mm;
+  height: 53.98mm;
+  transform: scale(var(--card-scale, 1));
+  transform-origin: top left;
 }
 .membership-card.theme-green {
   --c-primary: #0c5a35;
@@ -941,8 +951,8 @@ input[type="color"] {
 }
 .print-card-frame {
   position: relative;
-  width: 85.6mm;
-  height: 53.98mm;
+  width: fit-content;
+  height: fit-content;
 }
 .crop-mark {
   position: absolute;

@@ -7,6 +7,8 @@ import { PhotoCapture } from "@/components/photo-capture";
 import { PrintSheet } from "@/components/print-sheet";
 import { PrintPortal } from "@/components/print-portal";
 import { downloadCardPdf } from "@/components/print-card";
+import { useBranding } from "@/components/branding-context";
+import { cardSizeLabel, cardSizeMm } from "@/lib/branding";
 import { apiFetch } from "@/lib/client-api";
 import { addYearsISO, todayISO } from "@/lib/utils";
 import type { Gender, Subscriber } from "@/lib/types";
@@ -69,6 +71,8 @@ export function SubscriberForm({
   const [showPrint, setShowPrint] = useState(false);
   const [saved, setSaved] = useState<Subscriber | null>(initial ?? null);
   const cardRef = useRef<HTMLDivElement>(null);
+  const { branding } = useBranding();
+  const cardSize = cardSizeMm(branding.cardWidth);
 
   useEffect(() => {
     if (!isEdit) setPreviewNumber(nextNumber);
@@ -169,13 +173,13 @@ export function SubscriberForm({
       setError("Aperçu de carte introuvable.");
       return;
     }
-    await downloadCardPdf(el, `carte-${item.subscriptionNumber}.pdf`);
+    await downloadCardPdf(el, `carte-${item.subscriptionNumber}.pdf`, cardSize);
     await apiFetch(`/api/subscribers/${item.id}/card`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "download" }),
     });
-    setMessage("PDF téléchargé à l'échelle réelle (carte 85,60 × 53,98 mm sur A4 paysage).");
+    setMessage(`PDF téléchargé à l'échelle réelle (carte ${cardSizeLabel(branding.cardWidth)} sur A4 paysage).`);
   }
 
   async function onPrint() {
@@ -236,16 +240,16 @@ export function SubscriberForm({
                 checked={form.gender === "masculin"}
                 onChange={() => update("gender", "masculin")}
               />
-              Masculin — carte verte
+              Masculin — modèle vert
             </label>
-            <label className={form.gender === "feminin" ? "pill active gray" : "pill"}>
+            <label className={form.gender === "feminin" ? "pill active gold" : "pill"}>
               <input
                 type="radio"
                 name="gender"
                 checked={form.gender === "feminin"}
                 onChange={() => update("gender", "feminin")}
               />
-              Féminin — carte grise
+              Féminin — modèle doré
             </label>
           </div>
         </fieldset>
@@ -342,17 +346,18 @@ export function SubscriberForm({
           <div className="preview-head">
             <h3>Aperçu en temps réel</h3>
             <span className={`chip ${form.gender === "feminin" ? "chip-gold" : "chip-green"}`}>
-              {form.gender === "feminin" ? "Modèle gris — féminin" : "Modèle vert — masculin"}
+              {form.gender === "feminin" ? "Modèle doré — féminin" : "Modèle vert — masculin"}
             </span>
           </div>
           <div className="preview-card" ref={cardRef}>
-            <CardScaler scale={1.55}>
+            <CardScaler scale={Math.min(1.55, 132 / cardSize.width)} size={cardSize}>
               <MembershipCard data={cardData} />
             </CardScaler>
           </div>
           <p className="hint">
-            Carte bancaire 85,60 × 53,98 mm. Impression : une seule carte au recto, centrée sur A4
-            paysage, à taille réelle, avec repères de coupe.
+            Carte imprimée {cardSizeLabel(branding.cardWidth)}. Impression : une seule carte au recto,
+            centrée sur A4 paysage, à taille réelle, avec repères de coupe. Réglez la dimension dans Super
+            admin — Paramètres.
           </p>
           {saved ? (
             <button type="button" className="btn btn-ghost btn-block" onClick={() => router.push(`/abonnes/${saved.id}`)}>
