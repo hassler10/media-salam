@@ -684,7 +684,8 @@ input[type="color"] {
   right: 0;
   z-index: 3;
   width: 24.6mm;
-  height: 15.2mm;
+  /* Le rabat s'arrete avant le carré QR (top 14,7 mm), sinon il le recouvre. */
+  height: 13.2mm;
   background: var(--c-accent);
   border-top-right-radius: var(--card-radius, 2.6mm);
   border-bottom-left-radius: 100% 100%;
