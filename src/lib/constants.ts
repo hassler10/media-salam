@@ -32,5 +32,13 @@ export const APP_REQUEST_VALUE = "media-salam";
 export const HEAVY_READ_LIMITS = {
   backup: { max: 3, windowMs: 60_000 },
   csvExport: { max: 3, windowMs: 60_000 },
-  photos: { max: 30, windowMs: 60_000 },
+  // La liste affiche les vignettes et recharge à chaque frappe dans la recherche.
+  photos: { max: 120, windowMs: 60_000 },
+} as const;
+
+/** Actions irréversibles ou sensibles, plafonnées par compte sur une plus longue fenêtre. */
+export const SENSITIVE_WRITE_LIMITS = {
+  trash: { max: 20, windowMs: 15 * 60_000 },
+  restore: { max: 20, windowMs: 15 * 60_000 },
+  purge: { max: 5, windowMs: 15 * 60_000 },
 } as const;

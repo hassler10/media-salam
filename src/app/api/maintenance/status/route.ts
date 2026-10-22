@@ -1,4 +1,4 @@
-import { count, eq, isNull, lt, or, sql } from "drizzle-orm";
+import { and, count, eq, isNotNull, isNull, lt, or, sql } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { activityLogs, admins, cardErrors, settings, subscribers } from "@/db/schema";
@@ -22,15 +22,20 @@ export async function GET() {
   }
 
   const today = todayISO();
-  const [subscriberRow] = await db.select({ n: count() }).from(subscribers);
+  const active = isNull(subscribers.deletedAt);
+  const [subscriberRow] = await db.select({ n: count() }).from(subscribers).where(active);
+  const [trashedRow] = await db
+    .select({ n: count() })
+    .from(subscribers)
+    .where(isNotNull(subscribers.deletedAt));
   const [photoRow] = await db
     .select({ n: count() })
     .from(subscribers)
-    .where(or(isNull(subscribers.photoData), eq(subscribers.photoData, "")));
+    .where(and(active, or(isNull(subscribers.photoData), eq(subscribers.photoData, ""))));
   const [expiredRow] = await db
     .select({ n: count() })
     .from(subscribers)
-    .where(lt(subscribers.validityDate, today));
+    .where(and(active, lt(subscribers.validityDate, today)));
   const [logRow] = await db.select({ n: count() }).from(activityLogs);
   const [errRow] = await db.select({ n: count() }).from(cardErrors);
   const [adminRow] = await db.select({ n: count() }).from(admins);
@@ -45,6 +50,7 @@ export async function GET() {
       database,
       databaseMessage,
       subscriberCount: Number(subscriberRow?.n ?? 0),
+      trashCount: Number(trashedRow?.n ?? 0),
       duplicateNumbers: (dupResult.rows ?? []).map((r) => r.subscription_number),
       missingPhotos: Number(photoRow?.n ?? 0),
       expiredCount: Number(expiredRow?.n ?? 0),

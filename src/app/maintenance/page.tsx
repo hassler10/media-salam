@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AppShell, PageHeader } from "@/components/app-shell";
 import type { AdminAccount, MaintenanceStatus } from "@/lib/types";
@@ -162,6 +163,13 @@ export default function MaintenancePage() {
         <article className="stat-card">
           <span>Abonnés</span>
           <strong>{status?.subscriberCount ?? "—"}</strong>
+        </article>
+        <article className="stat-card">
+          <span>À la corbeille</span>
+          <strong>{status?.trashCount ?? "—"}</strong>
+          <small>
+            <Link href="/abonnes?filter=supprimes">Restaurer ou purger</Link>
+          </small>
         </article>
         <article className="stat-card">
           <span>Doublons de numéros</span>

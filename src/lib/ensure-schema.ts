@@ -38,9 +38,17 @@ async function createSchema() {
       is_demo boolean NOT NULL DEFAULT false,
       card_generated_at timestamp,
       last_printed_at timestamp,
+      deleted_at timestamp,
+      deleted_by varchar(80),
       created_at timestamp NOT NULL DEFAULT now(),
       updated_at timestamp NOT NULL DEFAULT now()
     )
+  `);
+  // Colonnes apparues après le premier déploiement : les bases existantes doivent rattraper.
+  await db.execute(sql`
+    ALTER TABLE subscribers
+      ADD COLUMN IF NOT EXISTS deleted_at timestamp,
+      ADD COLUMN IF NOT EXISTS deleted_by varchar(80)
   `);
   await db.execute(sql`
     CREATE TABLE IF NOT EXISTS subscription_counter (

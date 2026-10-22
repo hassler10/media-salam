@@ -22,16 +22,26 @@ function CartesInner() {
   const [q, setQ] = useState("");
   const [showPrint, setShowPrint] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const cardRef = useRef<HTMLDivElement>(null);
   const { branding } = useBranding();
 
   useEffect(() => {
     void apiFetch("/api/subscribers?photos=1")
-      .then((r) => r.json())
+      .then(async (r) => {
+        const d = (await r.json()) as { items?: Subscriber[]; error?: string };
+        if (!r.ok) throw new Error(d.error || "Le chargement des abonnés a échoué.");
+        return d;
+      })
       .then((d) => {
         const list = (d.items as Subscriber[]) ?? [];
         setItems(list);
+        setError(null);
         if (!selectedId && list[0]) setSelectedId(list[0].id);
+      })
+      .catch((e: Error) => {
+        setItems([]);
+        setError(e.message);
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -76,6 +86,7 @@ function CartesInner() {
         subtitle="Sélectionnez un abonné. Le modèle vert s'applique aux hommes, le modèle doré aux femmes."
       />
       {message ? <div className="alert success">{message}</div> : null}
+      {error ? <div className="alert error">{error}</div> : null}
       <div className="form-layout">
         <div className="panel">
           <input
@@ -158,6 +169,9 @@ function CartesInner() {
                 </button>
                 <a className="btn btn-ghost" href={`/imprimer/${selected.id}`} target="_blank" rel="noreferrer">
                   Page d&apos;impression
+                </a>
+                <a className="btn btn-ghost" href={`/abonnes/${selected.id}`}>
+                  Fiche abonné
                 </a>
               </div>
             </>

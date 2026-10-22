@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { fail, requireApiUser } from "@/lib/api-guard";
 import { logActivity } from "@/lib/logs";
-import { getSubscriber, markCardGenerated, markCardPrinted } from "@/lib/subscribers";
+import { getSubscriber, markCardGenerated, markCardPrinted, parseSubscriberId } from "@/lib/subscribers";
 
 export const dynamic = "force-dynamic";
 
@@ -10,11 +10,15 @@ type Ctx = { params: Promise<{ id: string }> };
 export async function POST(request: Request, ctx: Ctx) {
   const { user, response } = await requireApiUser();
   if (!user) return response;
-  const { id } = await ctx.params;
-  const item = await getSubscriber(Number(id));
+  const id = parseSubscriberId((await ctx.params).id);
+  if (id === null) return fail("Identifiant invalide.", 400);
+  const item = await getSubscriber(id);
   if (!item) return fail("Abonné introuvable.", 404);
   const body = (await request.json().catch(() => ({}))) as { action?: string };
-  const action = body.action === "print" ? "print" : body.action === "download" ? "download" : "generate";
+  if (body.action !== "print" && body.action !== "download" && body.action !== "generate") {
+    return fail("Action inconnue.", 400);
+  }
+  const action = body.action;
   if (action === "print") {
     await markCardPrinted(item.id);
     await logActivity({

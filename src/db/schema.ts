@@ -26,6 +26,8 @@ export const subscribers = pgTable("subscribers", {
   isDemo: boolean("is_demo").default(false).notNull(),
   cardGeneratedAt: timestamp("card_generated_at"),
   lastPrintedAt: timestamp("last_printed_at"),
+  deletedAt: timestamp("deleted_at"),
+  deletedBy: varchar("deleted_by", { length: 80 }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

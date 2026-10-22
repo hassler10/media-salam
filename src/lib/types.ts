@@ -15,6 +15,9 @@ export type Subscriber = {
   isDemo: boolean;
   cardGeneratedAt: string | null;
   lastPrintedAt: string | null;
+  /** Renseigné lorsque la fiche est à la corbeille : rien n'est perdu avant purge. */
+  deletedAt: string | null;
+  deletedBy: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -75,6 +78,7 @@ export type MaintenanceStatus = {
   database: "ok" | "erreur";
   databaseMessage: string;
   subscriberCount: number;
+  trashCount: number;
   duplicateNumbers: string[];
   missingPhotos: number;
   expiredCount: number;

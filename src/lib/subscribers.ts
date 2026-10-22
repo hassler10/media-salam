@@ -1,4 +1,4 @@
-import { and, desc, eq, ilike, or, sql } from "drizzle-orm";
+import { and, desc, eq, ilike, isNotNull, isNull, or, sql, type SQL } from "drizzle-orm";
 import { db } from "@/db";
 import { subscribers, subscriptionCounter } from "@/db/schema";
 import { SUBSCRIPTION_PREFIX } from "@/lib/constants";
@@ -26,6 +26,8 @@ function mapSubscriber(row: SubscriberRow | SubscriberRowLite): Subscriber {
     isDemo: row.isDemo,
     cardGeneratedAt: toISODateTime(row.cardGeneratedAt),
     lastPrintedAt: toISODateTime(row.lastPrintedAt),
+    deletedAt: toISODateTime(row.deletedAt),
+    deletedBy: row.deletedBy,
     createdAt: toISODateTime(row.createdAt) ?? new Date().toISOString(),
     updatedAt: toISODateTime(row.updatedAt) ?? new Date().toISOString(),
   };
@@ -84,6 +86,8 @@ const LITE_COLUMNS = {
   isDemo: subscribers.isDemo,
   cardGeneratedAt: subscribers.cardGeneratedAt,
   lastPrintedAt: subscribers.lastPrintedAt,
+  deletedAt: subscribers.deletedAt,
+  deletedBy: subscribers.deletedBy,
   createdAt: subscribers.createdAt,
   updatedAt: subscribers.updatedAt,
 };
@@ -94,18 +98,18 @@ export async function listSubscribers(options?: {
   includePhoto?: boolean;
 }): Promise<Subscriber[]> {
   const includePhoto = options?.includePhoto ?? false;
-  const conditions = [];
+  const trashed = options?.filter === "supprimes";
+  const conditions: SQL[] = [trashed ? isNotNull(subscribers.deletedAt) : isNull(subscribers.deletedAt)];
   if (options?.q) {
     const term = `%${options.q.trim()}%`;
-    conditions.push(
-      or(
-        ilike(subscribers.lastName, term),
-        ilike(subscribers.firstName, term),
-        ilike(subscribers.phone, term),
-        ilike(subscribers.subscriptionNumber, term),
-        ilike(subscribers.profession, term),
-      ),
+    const search = or(
+      ilike(subscribers.lastName, term),
+      ilike(subscribers.firstName, term),
+      ilike(subscribers.phone, term),
+      ilike(subscribers.subscriptionNumber, term),
+      ilike(subscribers.profession, term),
     );
+    if (search) conditions.push(search);
   }
   if (options?.filter === "hommes") conditions.push(eq(subscribers.gender, "masculin"));
   if (options?.filter === "femmes") conditions.push(eq(subscribers.gender, "feminin"));
@@ -114,7 +118,7 @@ export async function listSubscribers(options?: {
   const rows = (await db
     .select(columns)
     .from(subscribers)
-    .where(conditions.length ? and(...conditions) : undefined)
+    .where(and(...conditions))
     .orderBy(desc(subscribers.createdAt))) as SubscriberRow[];
 
   const today = todayISO();
@@ -134,8 +138,27 @@ export async function listSubscribers(options?: {
     .map(mapSubscriber);
 }
 
-export async function getSubscriber(id: number): Promise<Subscriber | null> {
-  const rows = await db.select().from(subscribers).where(eq(subscribers.id, id)).limit(1);
+/** Identifiant d'URL : uniquement des chiffres, sinon la requête est rejetée. */
+export function parseSubscriberId(raw: string | number | undefined): number | null {
+  if (typeof raw === "number") return Number.isInteger(raw) && raw > 0 ? raw : null;
+  if (!raw || !/^\d{1,10}$/.test(raw)) return null;
+  const id = Number(raw);
+  return id > 0 ? id : null;
+}
+
+export async function getSubscriber(
+  id: number,
+  options?: { includeDeleted?: boolean },
+): Promise<Subscriber | null> {
+  const rows = await db
+    .select()
+    .from(subscribers)
+    .where(
+      options?.includeDeleted
+        ? eq(subscribers.id, id)
+        : and(eq(subscribers.id, id), isNull(subscribers.deletedAt)),
+    )
+    .limit(1);
   return rows[0] ? mapSubscriber(rows[0]) : null;
 }
 
@@ -225,8 +248,32 @@ export async function updateSubscriber(id: number, input: SubscriberInput): Prom
   return mapSubscriber(rows[0]);
 }
 
-export async function deleteSubscriber(id: number): Promise<void> {
-  await db.delete(subscribers).where(eq(subscribers.id, id));
+/** Direction la corbeille : la fiche reste récupérable, la carte devient inactive. */
+export async function trashSubscriber(id: number, actor: string): Promise<Subscriber | null> {
+  const rows = await db
+    .update(subscribers)
+    .set({ deletedAt: new Date(), deletedBy: actor, updatedAt: new Date() })
+    .where(and(eq(subscribers.id, id), isNull(subscribers.deletedAt)))
+    .returning();
+  return rows[0] ? mapSubscriber(rows[0]) : null;
+}
+
+export async function restoreSubscriber(id: number): Promise<Subscriber | null> {
+  const rows = await db
+    .update(subscribers)
+    .set({ deletedAt: null, deletedBy: null, updatedAt: new Date() })
+    .where(and(eq(subscribers.id, id), isNotNull(subscribers.deletedAt)))
+    .returning();
+  return rows[0] ? mapSubscriber(rows[0]) : null;
+}
+
+/** Seule la purge fait disparaître la ligne et sa photo. */
+export async function purgeSubscriber(id: number): Promise<boolean> {
+  const rows = await db
+    .delete(subscribers)
+    .where(and(eq(subscribers.id, id), isNotNull(subscribers.deletedAt)))
+    .returning({ id: subscribers.id });
+  return rows.length > 0;
 }
 
 export async function markCardGenerated(id: number) {
@@ -238,6 +285,18 @@ export async function markCardPrinted(id: number) {
 }
 
 export async function countSubscribers() {
-  const rows = await db.select({ count: sql<number>`count(*)::int` }).from(subscribers);
+  const rows = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(subscribers)
+    .where(isNull(subscribers.deletedAt));
+  return rows[0]?.count ?? 0;
+}
+
+/** Nombre de fiches en attente à la corbeille. */
+export async function countTrashedSubscribers() {
+  const rows = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(subscribers)
+    .where(isNotNull(subscribers.deletedAt));
   return rows[0]?.count ?? 0;
 }

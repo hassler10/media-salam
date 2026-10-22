@@ -5,6 +5,11 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 import { AppShell, PageHeader, StatusBadge } from "@/components/app-shell";
+import {
+  PurgeSubscriberButton,
+  RestoreSubscriberButton,
+  TrashSubscriberButton,
+} from "@/components/subscriber-trash";
 import type { Subscriber } from "@/lib/types";
 import { formatDateFR, fullName, genderLabel, getStatus } from "@/lib/utils";
 import { apiFetch } from "@/lib/client-api";
@@ -16,6 +21,7 @@ const FILTERS = [
   { id: "bientot", label: "Arrivant à expiration" },
   { id: "hommes", label: "Hommes" },
   { id: "femmes", label: "Femmes" },
+  { id: "supprimes", label: "Corbeille" },
 ];
 
 function AbonnesInner() {
@@ -25,8 +31,9 @@ function AbonnesInner() {
   const [filter, setFilter] = useState(params.get("filter") || "tous");
   const [items, setItems] = useState<Subscriber[]>([]);
   const [loading, setLoading] = useState(true);
-  const [toDelete, setToDelete] = useState<Subscriber | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const trashedView = filter === "supprimes";
 
   async function load() {
     setLoading(true);
@@ -35,7 +42,14 @@ function AbonnesInner() {
     if (filter && filter !== "tous") sp.set("filter", filter);
     sp.set("photos", "1");
     const res = await apiFetch(`/api/subscribers?${sp.toString()}`);
-    const data = await res.json();
+    const data = (await res.json().catch(() => ({}))) as { items?: Subscriber[]; error?: string };
+    if (!res.ok) {
+      setError(data.error || "Le chargement de la liste a échoué.");
+      setItems([]);
+      setLoading(false);
+      return;
+    }
+    setError(null);
     setItems(data.items ?? []);
     setLoading(false);
   }
@@ -48,22 +62,15 @@ function AbonnesInner() {
 
   const counts = useMemo(() => ({ total: items.length }), [items]);
 
-  async function confirmDelete() {
-    if (!toDelete) return;
-    const res = await apiFetch(`/api/subscribers/${toDelete.id}`, { method: "DELETE" });
-    if (!res.ok) {
-      setError("Suppression impossible.");
-    } else {
-      setToDelete(null);
-      void load();
-    }
-  }
-
   return (
     <AppShell>
       <PageHeader
         title="Liste des abonnés"
-        subtitle={`${counts.total} fiche${counts.total > 1 ? "s" : ""} affichée${counts.total > 1 ? "s" : ""}.`}
+        subtitle={
+          trashedView
+            ? `${counts.total} fiche${counts.total > 1 ? "s" : ""} en attente, récupérable${counts.total > 1 ? "s" : ""} avant purge.`
+            : `${counts.total} fiche${counts.total > 1 ? "s" : ""} affichée${counts.total > 1 ? "s" : ""}.`
+        }
         actions={
           <Link href="/abonnes/nouveau" className="btn btn-primary">
             Enregistrer un abonné
@@ -119,7 +126,9 @@ function AbonnesInner() {
             ) : items.length === 0 ? (
               <tr>
                 <td colSpan={8} className="empty">
-                  Aucun abonné ne correspond à cette recherche.
+                  {trashedView
+                    ? "La corbeille est vide : toute fiche supprimée y attend une restauration ou une purge."
+                    : "Aucun abonné ne correspond à cette recherche."}
                 </td>
               </tr>
             ) : (
@@ -142,17 +151,28 @@ function AbonnesInner() {
                   <td>{genderLabel(s.gender)}</td>
                   <td>{formatDateFR(s.validityDate)}</td>
                   <td>
-                    <StatusBadge status={getStatus(s.validityDate)} />
+                    {trashedView ? (
+                      <span className="chip">Corbeille</span>
+                    ) : (
+                      <StatusBadge status={getStatus(s.validityDate)} />
+                    )}
                   </td>
                   <td className="row-actions">
-                    <Link href={`/abonnes/${s.id}`}>Fiche</Link>
-                    <Link href={`/cartes?id=${s.id}`}>Carte</Link>
-                    <Link href={`/imprimer/${s.id}`} target="_blank">
-                      Imprimer
-                    </Link>
-                    <button type="button" onClick={() => setToDelete(s)}>
-                      Supprimer
-                    </button>
+                    {trashedView ? (
+                      <>
+                        <RestoreSubscriberButton subscriber={s} afterAction={() => void load()} />
+                        <PurgeSubscriberButton subscriber={s} afterAction={() => void load()} />
+                      </>
+                    ) : (
+                      <>
+                        <Link href={`/abonnes/${s.id}`}>Fiche</Link>
+                        <Link href={`/cartes?id=${s.id}`}>Carte</Link>
+                        <Link href={`/imprimer/${s.id}`} target="_blank">
+                          Imprimer
+                        </Link>
+                        <TrashSubscriberButton subscriber={s} afterAction={() => void load()} />
+                      </>
+                    )}
                   </td>
                 </tr>
               ))
@@ -160,26 +180,6 @@ function AbonnesInner() {
           </tbody>
         </table>
       </div>
-
-      {toDelete ? (
-        <div className="modal-backdrop">
-          <div className="modal">
-            <h3>Confirmer la suppression</h3>
-            <p>
-              Supprimer définitivement {fullName(toDelete.lastName, toDelete.firstName)} (
-              {toDelete.subscriptionNumber}) ? Cette action est irréversible.
-            </p>
-            <div className="modal-actions">
-              <button type="button" className="btn btn-ghost" onClick={() => setToDelete(null)}>
-                Annuler
-              </button>
-              <button type="button" className="btn btn-danger" onClick={() => void confirmDelete()}>
-                Supprimer
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : null}
     </AppShell>
   );
 }

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { sql } from "drizzle-orm";
+import { isNull, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { subscribers } from "@/db/schema";
 import { requireApiUser } from "@/lib/api-guard";
@@ -27,7 +27,8 @@ export async function GET() {
       withoutPhoto: sql<number>`count(*) filter (where ${subscribers.photoData} is null or ${subscribers.photoData} = '')::int`,
       cardsGenerated: sql<number>`count(*) filter (where ${subscribers.cardGeneratedAt} is not null)::int`,
     })
-    .from(subscribers);
+    .from(subscribers)
+    .where(isNull(subscribers.deletedAt));
 
   return NextResponse.json({
     stats: {
