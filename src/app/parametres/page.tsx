@@ -284,22 +284,23 @@ function ParametresInner() {
             </label>
           </div>
 
-          <h3>Couleurs</h3>
+          <h3>Couleurs des deux modèles</h3>
+          <p className="muted">Modèle vert = cartes des hommes. Modèle doré = cartes des femmes.</p>
           <div className="grid-2">
             <label className="field">
-              <span>Vert hommes — couleur principale</span>
+              <span>Modèle vert — couleur principale</span>
               <input type="color" value={form.malePrimary} onChange={(e) => update("malePrimary", e.target.value)} />
             </label>
             <label className="field">
-              <span>Vert hommes — accent</span>
+              <span>Modèle vert — accent (dorure)</span>
               <input type="color" value={form.maleAccent} onChange={(e) => update("maleAccent", e.target.value)} />
             </label>
             <label className="field">
-              <span>Gris femmes — couleur principale</span>
+              <span>Modèle doré — couleur principale</span>
               <input type="color" value={form.femalePrimary} onChange={(e) => update("femalePrimary", e.target.value)} />
             </label>
             <label className="field">
-              <span>Gris femmes — accent</span>
+              <span>Modèle doré — accent</span>
               <input type="color" value={form.femaleAccent} onChange={(e) => update("femaleAccent", e.target.value)} />
             </label>
           </div>
@@ -517,14 +518,14 @@ function ParametresInner() {
                   className={previewGender === "masculin" ? "chip chip-green" : "chip"}
                   onClick={() => setPreviewGender("masculin")}
                 >
-                  Homme
+                  Modèle vert (homme)
                 </button>
                 <button
                   type="button"
-                  className={previewGender === "feminin" ? "chip chip-gray" : "chip"}
+                  className={previewGender === "feminin" ? "chip chip-gold" : "chip"}
                   onClick={() => setPreviewGender("feminin")}
                 >
-                  Femme
+                  Modèle doré (femme)
                 </button>
               </div>
             </div>

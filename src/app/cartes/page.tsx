@@ -104,7 +104,7 @@ function CartesInner() {
             <>
               <div className="preview-head">
                 <h3>{fullName(selected.lastName, selected.firstName)}</h3>
-                <span className={`chip ${selected.gender === "feminin" ? "chip-gray" : "chip-green"}`}>
+                <span className={`chip ${selected.gender === "feminin" ? "chip-gold" : "chip-green"}`}>
                   {selected.gender === "feminin" ? "Féminin — gris" : "Masculin — vert"}
                 </span>
               </div>

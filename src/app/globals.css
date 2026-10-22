@@ -397,7 +397,7 @@ button, input, select, textarea {
   cursor: pointer;
 }
 .chip-green { background: #e8f6ee; color: var(--green); border-color: transparent; }
-.chip-gray { background: #ececec; color: #333; border-color: transparent; }
+.chip-gold { background: #f6efdb; color: #6e5210; border-color: transparent; }
 .chip-active { background: var(--green); color: white; border-color: var(--green); }
 .filters { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 16px; }
 .toolbar { margin-bottom: 8px; }
@@ -564,30 +564,32 @@ button, input, select, textarea {
   --c-primary: #0c5a35;
   --c-primary-dark: #083820;
   --c-accent: #c9a227;
-  --c-pattern: rgba(12, 90, 53, .055);
+  --c-pattern: rgba(12, 90, 53, .05);
   --c-title: #0c5a35;
-  --c-mosque: #072c19;
+  --c-mosque: #0a4b2c;
   --c-icon: #0c5a35;
   --c-photo-border: #0c5a35;
+  --c-pill: #eef2ee;
 }
-.membership-card.theme-gray {
-  --c-primary: #4a4a4a;
-  --c-primary-dark: #2d2d2d;
-  --c-accent: #c0c4c8;
-  --c-pattern: rgba(70, 70, 70, .06);
-  --c-title: #3a3a3a;
-  --c-mosque: #2a2a2a;
-  --c-icon: #5a5a5a;
-  --c-photo-border: #6a6a6a;
+.membership-card.theme-gold {
+  --c-primary: #8c6a15;
+  --c-primary-dark: #6e5210;
+  --c-accent: #d8b44a;
+  --c-pattern: rgba(140, 106, 21, .055);
+  --c-title: #8c6a15;
+  --c-mosque: #7d5f12;
+  --c-icon: #8c6a15;
+  --c-photo-border: #8c6a15;
+  --c-pill: #f4efe2;
 }
 
 .card-pattern {
   position: absolute;
-  inset: 0 0 8.4mm 0;
+  inset: 0 0 9.2mm 0;
   background-image:
     radial-gradient(circle at 1.6mm 1.6mm, var(--c-pattern) 0.55mm, transparent 0.6mm),
-    linear-gradient(45deg, transparent 48%, var(--c-pattern) 49%, var(--c-pattern) 51%, transparent 52%);
-  background-size: 6.4mm 6.4mm, 8mm 8mm;
+    radial-gradient(circle at 4.8mm 4.8mm, var(--c-pattern) 0.35mm, transparent 0.4mm);
+  background-size: 6.4mm 6.4mm, 6.4mm 6.4mm;
   opacity: var(--pattern-opacity, .9);
   pointer-events: none;
 }
@@ -597,24 +599,24 @@ button, input, select, textarea {
   z-index: 2;
   display: flex;
   justify-content: space-between;
-  padding: 1.7mm 0 0 2.2mm;
-  min-height: 13.2mm;
+  padding: 1.9mm 26mm 0 2.2mm;
+  min-height: 13.6mm;
   transform: translateY(var(--o-header-y, 0mm));
 }
 .card-brand { display: flex; gap: 1.3mm; align-items: center; min-width: 0; flex: 1; }
 .card-logo {
-  width: 24mm;
-  height: 10.6mm;
+  width: 21mm;
+  height: 12.4mm;
   object-fit: contain;
   object-position: left center;
   flex: none;
-  background: #fff;
+  background: transparent;
 }
 .card-titles { text-align: var(--title-align, left); }
 .card-titles h1 {
   margin: 0;
   font-family: var(--c-font, var(--font-card), "Arial Narrow", sans-serif);
-  font-size: calc(3.45mm * var(--s-title, 1));
+  font-size: calc(3.6mm * var(--s-title, 1));
   letter-spacing: .06mm;
   color: var(--c-title);
   line-height: 1;
@@ -623,17 +625,17 @@ button, input, select, textarea {
 .card-titles h2 {
   margin: 0;
   font-family: var(--c-font, var(--font-card), "Arial Narrow", sans-serif);
-  font-size: calc(1.85mm * var(--s-title, 1));
+  font-size: calc(1.95mm * var(--s-title, 1));
   letter-spacing: .1mm;
   color: var(--c-title);
   line-height: 1.12;
   font-weight: 600;
 }
 .card-tagline {
-  margin: .4mm 0 0;
+  margin: .5mm 0 0;
   font-size: calc(1.45mm * var(--s-title, 1));
   font-style: italic;
-  color: var(--c-accent);
+  color: #2f3a33;
   letter-spacing: .02mm;
 }
 .card-extra-line {
@@ -667,54 +669,70 @@ input[type="color"] {
 }
 
 .card-banner {
-  width: 29mm;
-  background: var(--c-primary);
-  color: white;
-  clip-path: polygon(18% 0, 100% 0, 100% 100%, 0 100%);
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  padding: 1.4mm 2.4mm 1.4mm 6mm;
-  border-top-right-radius: 2.6mm;
-}
-.card-banner-gold {
   position: absolute;
-  left: 3.4mm;
   top: 0;
-  bottom: 0;
-  width: 0.55mm;
+  right: 0;
+  z-index: 3;
+  width: 24.6mm;
+  height: 15.2mm;
   background: var(--c-accent);
-  transform: skewX(-22deg);
+  border-top-right-radius: var(--card-radius, 2.6mm);
+  border-bottom-left-radius: 100% 100%;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 2.2mm 3.2mm 0 5mm;
+  color: white;
+  box-sizing: border-box;
+}
+.card-banner::before {
+  content: "";
+  position: absolute;
+  top: -.4mm;
+  right: -.4mm;
+  bottom: -.4mm;
+  left: .55mm;
+  background: var(--c-primary);
+  border-top-right-radius: var(--card-radius, 2.6mm);
+  border-bottom-left-radius: 100% 100%;
 }
 .card-banner-text {
+  position: relative;
+  z-index: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
-  line-height: 1.05;
+  line-height: 1.08;
   font-family: var(--c-font, var(--font-card), "Arial Narrow", sans-serif);
   font-weight: 700;
-  font-size: calc(2.15mm * var(--s-banner, 1));
+  font-size: calc(2.1mm * var(--s-banner, 1));
   letter-spacing: .12mm;
   text-align: center;
+}
+.card-banner-text span + span {
+  font-size: calc(1.65mm * var(--s-banner, 1));
+  font-weight: 600;
+  letter-spacing: .1mm;
 }
 
 .card-body {
   position: relative;
   z-index: 2;
   display: grid;
-  grid-template-columns: 19.2mm 1fr 18.8mm;
+  grid-template-columns: 19.8mm minmax(0, 1fr) 19.6mm;
   gap: 2mm;
-  padding: 0.6mm 2.4mm 0 2.4mm;
+  padding: .4mm 2.4mm 0 2.4mm;
 }
 .card-photo-col { transform: translateY(var(--o-photo-y, 0mm)); }
 .card-photo {
-  width: 18mm;
-  height: 22mm;
-  border-radius: 1.1mm;
+  width: 19.1mm;
+  height: 24.4mm;
+  border-radius: 1.2mm 1.2mm 0 0;
   overflow: hidden;
-  border: 0.35mm solid var(--c-photo-border);
-  background: #d0d0d0;
+  border: .35mm solid var(--c-photo-border);
+  border-bottom: none;
+  box-sizing: border-box;
+  background: #d9d9d9;
 }
 .card-photo img, .card-photo-placeholder {
   width: 100%;
@@ -723,47 +741,56 @@ input[type="color"] {
   display: block;
 }
 .card-photo-caption {
-  margin: 0.6mm 0 0;
-  font-size: calc(1.2mm * var(--s-hint, 1));
-  letter-spacing: .12mm;
-  color: var(--c-title);
+  margin: 0;
+  background: var(--c-primary);
+  color: #fff;
+  border-radius: 0 0 1.2mm 1.2mm;
+  box-sizing: border-box;
+  padding: 1mm .4mm;
+  font-size: calc(1.05mm * var(--s-hint, 1));
+  letter-spacing: .1mm;
   font-weight: 700;
+  text-transform: uppercase;
   text-align: center;
 }
-.card-fields { display: flex; flex-direction: column; gap: 0.55mm; padding-top: 0.4mm; min-width: 0; transform: translate(var(--o-fields-x, 0mm), var(--o-fields-y, 0mm)); }
+.card-fields { display: flex; flex-direction: column; gap: 1.05mm; padding-top: 1mm; min-width: 0; transform: translate(var(--o-fields-x, 0mm), var(--o-fields-y, 0mm)); }
 .card-field {
   display: grid;
-  grid-template-columns: 3.1mm minmax(12.6mm, max-content) minmax(0, 1fr);
-  gap: 0.7mm;
+  grid-template-columns: 3.2mm minmax(12.4mm, max-content) minmax(0, 1fr);
+  gap: .8mm;
   align-items: center;
   min-width: 0;
 }
 .card-field-icon {
-  width: 3.1mm;
-  height: 3.1mm;
+  width: 3.2mm;
+  height: 3.2mm;
   border-radius: 50%;
   background: var(--c-icon);
   color: white;
   display: grid;
   place-items: center;
-  padding: 0.45mm;
+  padding: .5mm;
+  box-sizing: border-box;
 }
 .card-field-label {
-  font-size: calc(1.45mm * var(--s-field, 1));
-  color: var(--c-title);
+  font-size: calc(1.4mm * var(--s-field, 1));
+  color: #2b352c;
   font-weight: 700;
   white-space: nowrap;
   text-align: var(--fields-align, left);
 }
 .card-field-value {
-  font-size: calc(1.55mm * var(--s-field, 1));
-  color: #2b2b2b;
+  font-size: calc(1.5mm * var(--s-field, 1));
+  color: #54606b;
   font-weight: 600;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   min-width: 0;
   text-align: var(--fields-align, left);
+  background: var(--c-pill);
+  border-radius: 1.6mm;
+  padding: .75mm 1.4mm;
 }
 .card-qr-col {
   display: flex;
@@ -772,36 +799,40 @@ input[type="color"] {
   transform: translateY(var(--o-qr-y, 0mm));
 }
 .card-qr {
-  width: calc(16.2mm * var(--s-qr, 1));
-  height: calc(16.2mm * var(--s-qr, 1));
-  border: 0.28mm solid var(--c-photo-border);
-  border-radius: 0.8mm;
-  padding: 0.5mm;
+  width: calc(16.4mm * var(--s-qr, 1));
+  height: calc(16.4mm * var(--s-qr, 1));
+  border: .4mm solid var(--c-photo-border);
+  border-radius: 1.2mm;
+  padding: .55mm;
   background: white;
+  box-sizing: border-box;
 }
-.card-qr img { width: 100%; height: 100%; display: block; }
+.card-qr img { width: 100%; height: 100%; display: block; border-radius: .4mm; }
 .card-qr-empty { width: 100%; height: 100%; background: #f3f3f3; }
 .card-qr-hint {
-  margin: 0.7mm 0 0;
-  font-size: calc(1.15mm * var(--s-hint, 1));
-  color: var(--c-title);
-  text-align: center;
-  line-height: 1.15;
+  margin: .9mm 0 0;
+  font-size: calc(.95mm * var(--s-hint, 1));
+  background: var(--c-primary);
+  color: #fff;
+  border-radius: 1.2mm;
+  padding: .75mm .7mm;
+  text-align: left;
+  line-height: 1.2;
   display: flex;
-  gap: 0.5mm;
-  align-items: flex-start;
+  gap: .6mm;
+  align-items: center;
 }
 .card-qr-scan {
-  width: 2.2mm;
-  height: 2.2mm;
+  width: 2.1mm;
+  height: 2.1mm;
   flex: none;
-  color: var(--c-title);
+  color: #fff;
 }
 
 .card-footer {
   position: absolute;
   left: 0; right: 0; bottom: 0;
-  height: 8.6mm;
+  height: 9.2mm;
   z-index: 3;
   color: white;
 }
@@ -814,7 +845,7 @@ input[type="color"] {
 .card-footer-content {
   position: absolute;
   left: 2.4mm;
-  bottom: 1.6mm;
+  bottom: 1.9mm;
   display: flex;
   align-items: center;
   gap: 1mm;
@@ -832,18 +863,19 @@ input[type="color"] {
 }
 .card-mosque {
   position: absolute;
-  right: 1.4mm;
+  right: 1.8mm;
   bottom: 0;
-  width: 34mm;
-  height: 8.2mm;
+  width: 24mm;
+  height: 12mm;
   z-index: 2;
-  opacity: .95;
+  opacity: 1;
 }
 
 /* Styles de carte proposés dans Super admin */
 .membership-card[data-style="moderne"] .card-pattern { display: none; }
-.membership-card[data-style="moderne"] .card-banner { clip-path: none; }
-.membership-card[data-style="moderne"] .card-banner-gold { display: none; }
+.membership-card[data-style="moderne"] .card-banner,
+.membership-card[data-style="moderne"] .card-banner::before { border-bottom-left-radius: 0; }
+.membership-card[data-style="moderne"] .card-banner::before { left: 0; }
 .membership-card[data-style="moderne"] .card-gold-curve { display: none; }
 .membership-card[data-style="moderne"] .card-footer {
   background: var(--c-primary);

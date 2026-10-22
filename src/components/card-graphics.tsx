@@ -59,7 +59,7 @@ export function LibraryLogo({
 
 export function MosqueSkyline({ className, color = "#083820" }: { className?: string; color?: string }) {
   return (
-    <svg viewBox="0 0 260 70" className={className} preserveAspectRatio="xMaxYMax meet" aria-hidden="true">
+    <svg viewBox="150 0 110 64" className={className} preserveAspectRatio="xMaxYMax meet" aria-hidden="true">
       <g fill={color}>
         <rect x="178" y="28" width="5" height="34" />
         <rect x="176.5" y="24" width="8" height="5" rx="1" />
@@ -155,17 +155,6 @@ export function IconCalendar() {
       <path
         fill="currentColor"
         d="M8 3.5h1.5V5h5V3.5H16V5h2.5A1.5 1.5 0 0 1 20 6.5v12A1.5 1.5 0 0 1 18.5 20h-13A1.5 1.5 0 0 1 4 18.5v-12A1.5 1.5 0 0 1 5.5 5H8V3.5zM6 9v9h12V9H6z"
-      />
-    </svg>
-  );
-}
-
-export function IconScan() {
-  return (
-    <svg viewBox="0 0 24 24" width="100%" height="100%" aria-hidden="true">
-      <path
-        fill="currentColor"
-        d="M8 3h8a3 3 0 0 1 3 3v2h-1.6V6A1.4 1.4 0 0 0 16 4.6H8A1.4 1.4 0 0 0 6.6 6v2H5V6a3 3 0 0 1 3-3zm11 8.2H5v1.6h14v-1.6zM6.6 16v2A1.4 1.4 0 0 0 8 19.4h8a1.4 1.4 0 0 0 1.4-1.4v-2H19v2a3 3 0 0 1-3 3H8a3 3 0 0 1-3-3v-2h1.6z"
       />
     </svg>
   );

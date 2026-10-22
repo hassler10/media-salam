@@ -137,6 +137,14 @@ export function num(branding: CardBranding, key: keyof CardBranding, fallback: n
   return Math.min(limits.max, Math.max(limits.min, raw));
 }
 
+/** Blanc cassé translucide dérivé d’une couleur hex, pour les fonds de ligne. */
+export function hexToRgba(hex: string, alpha: number): string {
+  const match = /^#?([0-9a-f]{6})$/i.exec(hex.trim());
+  if (!match) return `rgba(0, 0, 0, ${alpha})`;
+  const n = parseInt(match[1], 16);
+  return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${alpha})`;
+}
+
 /** Nom de police autorisé, sinon celui de la carte d'origine. */
 export function cssFontFamily(branding: CardBranding): string {
   const map: Record<string, string> = {
@@ -169,8 +177,8 @@ export const DEFAULT_BRANDING: CardBranding = {
   publicBaseUrl: "",
   malePrimary: "#0C5A35",
   maleAccent: "#C9A227",
-  femalePrimary: "#4A4A4A",
-  femaleAccent: "#C0C4C8",
+  femalePrimary: "#8C6A15",
+  femaleAccent: "#D8B44A",
   showMosque: true,
   showFooterMotto: true,
   defaultValidityMonths: "12",
@@ -194,6 +202,15 @@ export const DEFAULT_BRANDING: CardBranding = {
 };
 
 const BOOL_KEYS = ["showMosque", "showFooterMotto"] as const;
+
+/**
+ * Le modèle « gris femmes » a été remplacé par le modèle doré : les réglages
+ * enregistrés qui portent encore ces anciennes valeurs par défaut sont migrés.
+ */
+const SUPERSEDED_DEFAULTS: Record<string, string[]> = {
+  femalePrimary: ["#4A4A4A"],
+  femaleAccent: ["#C0C4C8"],
+};
 
 export const TEXT_KEYS: (keyof CardBranding)[] = [
   "institutionName",
@@ -228,6 +245,8 @@ export function mapToBranding(map: Record<string, string>): CardBranding {
     if (!(key in map) || map[key] === undefined) continue;
     if ((BOOL_KEYS as readonly string[]).includes(key)) {
       next[key] = (map[key] === "1" || map[key] === "true") as never;
+    } else if ((SUPERSEDED_DEFAULTS[key] ?? []).some((v) => v.toLowerCase() === map[key].trim().toLowerCase())) {
+      // valeur par défaut dépassée : on garde celle du modèle actuel
     } else {
       (next as unknown as Record<string, string>)[key] = map[key];
     }

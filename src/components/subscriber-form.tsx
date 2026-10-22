@@ -341,7 +341,7 @@ export function SubscriberForm({
         <div className="panel preview-panel">
           <div className="preview-head">
             <h3>Aperçu en temps réel</h3>
-            <span className={`chip ${form.gender === "feminin" ? "chip-gray" : "chip-green"}`}>
+            <span className={`chip ${form.gender === "feminin" ? "chip-gold" : "chip-green"}`}>
               {form.gender === "feminin" ? "Modèle gris — féminin" : "Modèle vert — masculin"}
             </span>
           </div>

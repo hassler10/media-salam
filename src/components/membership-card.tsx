@@ -9,7 +9,6 @@ import {
   IconCalendar,
   IconCard,
   IconPhone,
-  IconScan,
   IconUser,
   CmpLogo,
   MosqueSkyline,
@@ -20,6 +19,7 @@ import {
   DEFAULT_BRANDING,
   STYLE_VALUES,
   cssFontFamily,
+  hexToRgba,
   logoSrc,
   num,
   type CardBranding,
@@ -73,10 +73,9 @@ function Field({
 export function MembershipCard({ data, className, branding: brandingProp }: Props) {
   const ctx = useBranding();
   const branding = brandingProp ?? ctx.branding ?? DEFAULT_BRANDING;
-  const theme = data.gender === "feminin" ? "gray" : "green";
+  const theme = data.gender === "feminin" ? "gold" : "green";
   const primary = theme === "green" ? branding.malePrimary : branding.femalePrimary;
   const accent = theme === "green" ? branding.maleAccent : branding.femaleAccent;
-  const mosque = theme === "green" ? "#083820" : "#2A2A2A";
   const [qr, setQr] = useState<string>("");
 
   const fieldScale = num(branding, "fieldScale", 1);
@@ -91,7 +90,9 @@ export function MembershipCard({ data, className, branding: brandingProp }: Prop
     "--c-title": primary,
     "--c-icon": primary,
     "--c-photo-border": primary,
-    "--c-mosque": mosque,
+    "--c-mosque": primary,
+    "--c-pill": hexToRgba(primary, 0.09),
+    "--c-pattern": hexToRgba(primary, 0.055),
     "--c-font": cssFontFamily(branding),
     "--c-card-bg": /^#[0-9a-f]{3,8}$/i.test(branding.cardBackground) ? branding.cardBackground : "#ffffff",
     "--s-title": num(branding, "titleScale", 1),
@@ -150,6 +151,13 @@ export function MembershipCard({ data, className, branding: brandingProp }: Prop
       style={cardVars}
     >
       <div className="card-pattern" />
+      <div className="card-banner">
+        <div className="card-banner-text">
+          {branding.bannerLine1 ? <span>{branding.bannerLine1}</span> : null}
+          {branding.bannerLine2 ? <span>{branding.bannerLine2}</span> : null}
+          {branding.bannerLine3 ? <span>{branding.bannerLine3}</span> : null}
+        </div>
+      </div>
       <header className="card-header">
         <div className="card-brand">
           <CmpLogo className="card-logo" alt={branding.shortName} src={logoSrc(branding)} />
@@ -159,14 +167,6 @@ export function MembershipCard({ data, className, branding: brandingProp }: Prop
             {branding.titleLine3 ? <h2>{branding.titleLine3}</h2> : null}
             {branding.tagline ? <p className="card-tagline">{branding.tagline}</p> : null}
             {branding.extraLine ? <p className="card-extra-line">{branding.extraLine}</p> : null}
-          </div>
-        </div>
-        <div className="card-banner">
-          <div className="card-banner-gold" />
-          <div className="card-banner-text">
-            {branding.bannerLine1 ? <span>{branding.bannerLine1}</span> : null}
-            {branding.bannerLine2 ? <span>{branding.bannerLine2}</span> : null}
-            {branding.bannerLine3 ? <span>{branding.bannerLine3}</span> : null}
           </div>
         </div>
       </header>
@@ -238,7 +238,7 @@ export function MembershipCard({ data, className, branding: brandingProp }: Prop
           {branding.qrHint ? (
             <p className="card-qr-hint">
               <span className="card-qr-scan">
-                <IconScan />
+                <IconPhone />
               </span>
               {branding.qrHint}
             </p>
@@ -259,7 +259,7 @@ export function MembershipCard({ data, className, branding: brandingProp }: Prop
             <span className="card-footer-motto">{branding.motto}</span>
           </div>
         ) : null}
-        {branding.showMosque ? <MosqueSkyline className="card-mosque" color={mosque} /> : null}
+        {branding.showMosque ? <MosqueSkyline className="card-mosque" color={primary} /> : null}
       </footer>
     </article>
   );
