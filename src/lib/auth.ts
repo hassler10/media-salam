@@ -1,5 +1,5 @@
 import { createHmac, randomBytes, scryptSync, timingSafeEqual } from "crypto";
-import { cookies, headers } from "next/headers";
+import { cookies } from "next/headers";
 import { sql } from "drizzle-orm";
 import { db } from "@/db";
 import { admins } from "@/db/schema";
@@ -83,29 +83,18 @@ export function readSession(token: string | undefined | null): SessionUser | nul
 
 export async function getSessionUser(): Promise<SessionUser | null> {
   const store = await cookies();
-  let tokenUser = readSession(store.get(SESSION_COOKIE)?.value);
-  if (!tokenUser) {
-    const h = await headers();
-    const auth = h.get("authorization") || h.get("Authorization");
-    if (auth && auth.toLowerCase().startsWith("bearer ")) {
-      tokenUser = readSession(auth.slice(7).trim());
-    }
-  }
+  const tokenUser = readSession(store.get(SESSION_COOKIE)?.value);
   if (!tokenUser) return null;
-  try {
-    const admin = await findAdminByUsername(tokenUser.username);
-    if (admin) {
-      return {
-        id: admin.id,
-        username: admin.username,
-        displayName: admin.displayName,
-        role: admin.role,
-      };
-    }
-  } catch {
-    /* session JWT suffisante */
-  }
-  return tokenUser;
+  // Role et identité viennent toujours de la base : un compte supprimé ou désactivé
+  // perd immédiatement l'accès, et une erreur de base refuse la session.
+  const admin = await findAdminByUsername(tokenUser.username);
+  if (!admin) return null;
+  return {
+    id: admin.id,
+    username: admin.username,
+    displayName: admin.displayName,
+    role: admin.role,
+  };
 }
 
 export async function requireSession(): Promise<SessionUser> {
@@ -181,9 +170,12 @@ export function clearLoginFailures(ip: string): void {
 }
 
 export function clientIp(request: Request): string {
+  // x-real-ip est posé par l'inférence Vercel et n'est pas falsifiable par le client,
+  // contrairement au premier élément de x-forwarded-for.
   const forwarded = request.headers.get("x-forwarded-for");
-  const first = forwarded?.split(",")[0]?.trim();
-  return first || request.headers.get("x-real-ip") || "unknown";
+  const chain = forwarded?.split(",").map((v) => v.trim()).filter(Boolean);
+  const last = chain?.[chain.length - 1];
+  return request.headers.get("x-real-ip") || last || "unknown";
 }
 
 export function sessionCookieOptions() {

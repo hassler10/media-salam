@@ -1,14 +1,21 @@
 import { NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { getSessionUser } from "@/lib/auth";
+import { APP_REQUEST_HEADER, APP_REQUEST_VALUE } from "@/lib/constants";
 
-async function isTrustedOrigin(): Promise<boolean> {
+/**
+ * Preuve qu'une requête vient de notre interface : en-tête applicatif (impossible à
+ * poser en cross-site sans CORS) et, s'il est présent, Origine/Referer same-origin.
+ */
+export async function isTrustedOrigin(): Promise<boolean> {
   try {
     const store = await headers();
+    if (store.get(APP_REQUEST_HEADER) !== APP_REQUEST_VALUE) return false;
     const host = store.get("host");
+    if (!host) return false;
     const forwardedHost = store.get("x-forwarded-host");
     const source = store.get("origin") ?? store.get("referer");
-    if (!source || !host) return true;
+    if (!source) return true;
     const sourceHost = new URL(source).host;
     return sourceHost === host || (!!forwardedHost && sourceHost === forwardedHost);
   } catch {
@@ -16,12 +23,13 @@ async function isTrustedOrigin(): Promise<boolean> {
   }
 }
 
+function forbidden() {
+  return NextResponse.json({ error: "Origine non autorisée." }, { status: 403 });
+}
+
 export async function requireApiUser() {
   if (!(await isTrustedOrigin())) {
-    return {
-      user: null,
-      response: NextResponse.json({ error: "Origine non autorisée." }, { status: 403 }),
-    };
+    return { user: null, response: forbidden() };
   }
   const user = await getSessionUser();
   if (!user) {

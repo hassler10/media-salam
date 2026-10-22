@@ -6,7 +6,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { AnimatedBg } from "@/components/animated-bg";
 import { BrandingProvider, useBranding } from "@/components/branding-context";
 import { CmpLogo } from "@/components/card-graphics";
-import { apiFetch, setClientToken } from "@/lib/client-api";
+import { apiFetch } from "@/lib/client-api";
 import { logoSrc } from "@/lib/branding";
 import { LIBRARY } from "@/lib/constants";
 import type { SessionUser } from "@/lib/types";
@@ -103,7 +103,6 @@ export function AppShell({ children }: { children: ReactNode }) {
   }, [router]);
 
   async function logout() {
-    setClientToken(null);
     await apiFetch("/api/auth/logout", { method: "POST" });
     router.replace("/login");
   }

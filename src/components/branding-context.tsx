@@ -44,8 +44,8 @@ export function useBranding(): Ctx {
   const refresh = useCallback(async () => {
     try {
       const res = await fetch("/api/branding");
-      const data = (await res.json()) as { branding?: CardBranding | null };
-      if (data.branding) setFallback(data.branding);
+      const data = (await res.json()) as { branding?: Partial<CardBranding> | null };
+      if (data.branding) setFallback({ ...DEFAULT_BRANDING, ...data.branding });
     } catch {
       /* ignore */
     }

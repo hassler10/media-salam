@@ -4,7 +4,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AnimatedBg } from "@/components/animated-bg";
 import { CmpLogo } from "@/components/card-graphics";
-import { setClientToken } from "@/lib/client-api";
+import { apiFetch } from "@/lib/client-api";
 import { DEFAULT_BRANDING, logoSrc, type CardBranding } from "@/lib/branding";
 import { LIBRARY } from "@/lib/constants";
 
@@ -19,8 +19,8 @@ export default function LoginPage() {
   useEffect(() => {
     void fetch("/api/branding")
       .then((r) => r.json())
-      .then((d) => {
-        if (d.branding) setBranding(d.branding);
+      .then((d: { branding?: Partial<CardBranding> | null }) => {
+        if (d.branding) setBranding({ ...DEFAULT_BRANDING, ...d.branding });
       });
   }, []);
 
@@ -29,18 +29,16 @@ export default function LoginPage() {
     setBusy(true);
     setError(null);
     try {
-      const res = await fetch("/api/auth/login", {
+      const res = await apiFetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        credentials: "include",
         body: JSON.stringify({ username, password }),
       });
-      const data = (await res.json()) as { error?: string; token?: string };
+      const data = (await res.json()) as { error?: string };
       if (!res.ok) {
         setError(data.error || "Connexion refusée.");
         return;
       }
-      if (data.token) setClientToken(data.token);
       router.replace("/");
       router.refresh();
     } catch {

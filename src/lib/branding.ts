@@ -294,3 +294,15 @@ export function mapToBranding(map: Record<string, string>): CardBranding {
 export function logoSrc(branding: CardBranding): string | null {
   return branding.logoData?.trim() || null;
 }
+
+/**
+ * Seuls ces champs sont servis sans session : assez pour afficher l'identité de la
+ * bibliothèque, sans divulguer le lien privé ni les réglages internes.
+ */
+export const PUBLIC_BRANDING_KEYS = ["institutionName", "shortName", "tagline", "logoData"] as const;
+
+export function publicBranding(branding: CardBranding): Partial<CardBranding> {
+  const safe: Partial<CardBranding> = {};
+  for (const key of PUBLIC_BRANDING_KEYS) safe[key] = branding[key];
+  return safe;
+}

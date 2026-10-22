@@ -6,7 +6,11 @@ import type { Gender, Subscriber, SubscriberInput } from "@/lib/types";
 import { isImageUpload, isIsoDate, MAX_PHOTO_CHARS } from "@/lib/validation";
 import { toISODate, toISODateTime, todayISO } from "@/lib/utils";
 
-function mapSubscriber(row: typeof subscribers.$inferSelect): Subscriber {
+type SubscriberRow = typeof subscribers.$inferSelect;
+/** Ligne sans la photo : la liste n'a jamais besoin de charger les visages. */
+type SubscriberRowLite = Omit<SubscriberRow, "photoData">;
+
+function mapSubscriber(row: SubscriberRow | SubscriberRowLite): Subscriber {
   return {
     id: row.id,
     subscriptionNumber: row.subscriptionNumber,
@@ -17,7 +21,7 @@ function mapSubscriber(row: typeof subscribers.$inferSelect): Subscriber {
     phone: row.phone,
     registrationDate: row.registrationDate,
     validityDate: row.validityDate,
-    photoData: row.photoData,
+    photoData: "photoData" in row ? row.photoData : null,
     notes: row.notes,
     isDemo: row.isDemo,
     cardGeneratedAt: toISODateTime(row.cardGeneratedAt),
@@ -66,13 +70,23 @@ export async function peekNextSubscriptionNumber(): Promise<string> {
   return formatSubscriptionNumber(year, next);
 }
 
-export function serializeSubscriber(row: typeof subscribers.$inferSelect, includePhoto = true): Subscriber {
-  const mapped = mapSubscriber(row);
-  if (!includePhoto) {
-    mapped.photoData = mapped.photoData ? "[photo]" : null;
-  }
-  return mapped;
-}
+const LITE_COLUMNS = {
+  id: subscribers.id,
+  subscriptionNumber: subscribers.subscriptionNumber,
+  lastName: subscribers.lastName,
+  firstName: subscribers.firstName,
+  gender: subscribers.gender,
+  profession: subscribers.profession,
+  phone: subscribers.phone,
+  registrationDate: subscribers.registrationDate,
+  validityDate: subscribers.validityDate,
+  notes: subscribers.notes,
+  isDemo: subscribers.isDemo,
+  cardGeneratedAt: subscribers.cardGeneratedAt,
+  lastPrintedAt: subscribers.lastPrintedAt,
+  createdAt: subscribers.createdAt,
+  updatedAt: subscribers.updatedAt,
+};
 
 export async function listSubscribers(options?: {
   q?: string;
@@ -96,11 +110,12 @@ export async function listSubscribers(options?: {
   if (options?.filter === "hommes") conditions.push(eq(subscribers.gender, "masculin"));
   if (options?.filter === "femmes") conditions.push(eq(subscribers.gender, "feminin"));
 
-  const rows = await db
-    .select()
+  const columns = includePhoto ? { ...LITE_COLUMNS, photoData: subscribers.photoData } : LITE_COLUMNS;
+  const rows = (await db
+    .select(columns)
     .from(subscribers)
     .where(conditions.length ? and(...conditions) : undefined)
-    .orderBy(desc(subscribers.createdAt));
+    .orderBy(desc(subscribers.createdAt))) as SubscriberRow[];
 
   const today = todayISO();
   const soon = new Date();
@@ -116,7 +131,7 @@ export async function listSubscribers(options?: {
       }
       return true;
     })
-    .map((row) => serializeSubscriber(row, includePhoto));
+    .map(mapSubscriber);
 }
 
 export async function getSubscriber(id: number): Promise<Subscriber | null> {

@@ -4,12 +4,12 @@ const isDev = process.env.NODE_ENV !== "production";
 
 const csp = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' blob:" + (isDev ? " 'unsafe-eval'" : ""),
+  "script-src 'self' 'unsafe-inline'" + (isDev ? " 'unsafe-eval'" : ""),
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob:",
   "font-src 'self' data:",
   "connect-src 'self' blob:" + (isDev ? " ws: wss:" : ""),
-  "frame-src 'self' blob: data:",
+  "frame-src 'self'",
   "worker-src 'self' blob:",
   "object-src 'none'",
   "base-uri 'self'",

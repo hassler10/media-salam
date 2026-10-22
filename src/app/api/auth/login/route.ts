@@ -9,6 +9,7 @@ import {
   signSession,
 } from "@/lib/auth";
 import { SESSION_COOKIE } from "@/lib/constants";
+import { isTrustedOrigin } from "@/lib/api-guard";
 import { logActivity } from "@/lib/logs";
 
 export const dynamic = "force-dynamic";
@@ -16,6 +17,9 @@ export const dynamic = "force-dynamic";
 export async function POST(request: Request) {
   const ip = clientIp(request);
   try {
+    if (!(await isTrustedOrigin())) {
+      return NextResponse.json({ error: "Origine non autorisée." }, { status: 403 });
+    }
     if (isLoginThrottled(ip)) {
       return NextResponse.json(
         { error: "Trop de tentatives de connexion. Réessayez dans 15 minutes." },
@@ -54,7 +58,6 @@ export async function POST(request: Request) {
     }
     const response = NextResponse.json({
       ok: true,
-      token,
       user: {
         id: admin.id,
         username: admin.username,
