@@ -1,13 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import { Modal } from "@/components/modal";
 import type { Subscriber } from "@/lib/types";
 import { fullName } from "@/lib/utils";
 import { apiFetch } from "@/lib/client-api";
 
-type Call = { path: string; init?: RequestInit };
-
-async function execute({ path, init }: Call, fallback: string): Promise<string | null> {
+async function call(path: string, fallback: string, init?: RequestInit): Promise<string | null> {
   try {
     const res = await apiFetch(path, init);
     if (res.ok) return null;
@@ -17,6 +16,12 @@ async function execute({ path, init }: Call, fallback: string): Promise<string |
     return fallback;
   }
 }
+
+const jsonPost = (body: unknown): RequestInit => ({
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify(body),
+});
 
 type ButtonProps = { subscriber: Subscriber; afterAction: () => void };
 type TrashProps = ButtonProps & { className?: string };
@@ -29,10 +34,9 @@ export function TrashSubscriberButton({ subscriber, afterAction, className }: Tr
 
   async function confirm() {
     setBusy(true);
-    const message = await execute(
-      { path: `/api/subscribers/${subscriber.id}`, init: { method: "DELETE" } },
-      "Suppression impossible.",
-    );
+    const message = await call(`/api/subscribers/${subscriber.id}`, "Suppression impossible.", {
+      method: "DELETE",
+    });
     setBusy(false);
     if (message) {
       setError(message);
@@ -44,29 +48,30 @@ export function TrashSubscriberButton({ subscriber, afterAction, className }: Tr
 
   return (
     <>
-      <button type="button" className={className} onClick={() => setOpen(true)}>
+      <button type="button" className={className ?? "danger"} onClick={() => setOpen(true)}>
         Supprimer
       </button>
       {open ? (
-        <div className="modal-backdrop">
-          <div className="modal">
-            <h3>Envoyer à la corbeille</h3>
-            <p>
-              Retirer de la circulation la fiche {fullName(subscriber.lastName, subscriber.firstName)} (
-              {subscriber.subscriptionNumber}) ? Elle reste récupérable dans la corbeille de la liste des
-              abonnés.
-            </p>
-            {error ? <div className="alert error">{error}</div> : null}
-            <div className="modal-actions">
+        <Modal
+          title="Envoyer à la corbeille"
+          footer={
+            <>
               <button type="button" className="btn btn-ghost" onClick={() => setOpen(false)}>
                 Annuler
               </button>
               <button type="button" className="btn btn-danger" disabled={busy} onClick={() => void confirm()}>
                 {busy ? "Suppression…" : "Mettre à la corbeille"}
               </button>
-            </div>
-          </div>
-        </div>
+            </>
+          }
+        >
+          <p>
+            Retirer de la circulation la fiche {fullName(subscriber.lastName, subscriber.firstName)} (
+            {subscriber.subscriptionNumber}) ? Elle reste récupérable dans la corbeille de la liste des
+            abonnés.
+          </p>
+          {error ? <div className="alert error">{error}</div> : null}
+        </Modal>
       ) : null}
     </>
   );
@@ -78,16 +83,10 @@ export function RestoreSubscriberButton({ subscriber, afterAction }: ButtonProps
 
   async function restore() {
     setBusy(true);
-    const message = await execute(
-      {
-        path: `/api/subscribers/${subscriber.id}/trash`,
-        init: {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ action: "restore" }),
-        },
-      },
+    const message = await call(
+      `/api/subscribers/${subscriber.id}/trash`,
       "Restauration impossible.",
+      jsonPost({ action: "restore" }),
     );
     setBusy(false);
     if (message) {
@@ -99,10 +98,13 @@ export function RestoreSubscriberButton({ subscriber, afterAction }: ButtonProps
 
   return (
     <>
-      {error ? <span className="muted">{error}</span> : null}
-      <button type="button" disabled={busy} onClick={() => void restore()}>
-        {busy ? "…" : "Restaurer"}
-      </button>
+      {error ? (
+        <span className="muted nowrap">{error}</span>
+      ) : (
+        <button type="button" disabled={busy} onClick={() => void restore()}>
+          {busy ? "Restauration…" : "Restaurer"}
+        </button>
+      )}
     </>
   );
 }
@@ -117,16 +119,10 @@ export function PurgeSubscriberButton({ subscriber, afterAction }: ButtonProps) 
 
   async function purge() {
     setBusy(true);
-    const message = await execute(
-      {
-        path: `/api/subscribers/${subscriber.id}/trash`,
-        init: {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ action: "purge", confirm: typed }),
-        },
-      },
+    const message = await call(
+      `/api/subscribers/${subscriber.id}/trash`,
       "Purge impossible.",
+      jsonPost({ action: "purge", confirm: typed }),
     );
     setBusy(false);
     if (message) {
@@ -140,28 +136,14 @@ export function PurgeSubscriberButton({ subscriber, afterAction }: ButtonProps) 
 
   return (
     <>
-      <button type="button" onClick={() => setOpen(true)}>
+      <button type="button" className="danger" onClick={() => setOpen(true)}>
         Supprimer définitivement
       </button>
       {open ? (
-        <div className="modal-backdrop">
-          <div className="modal">
-            <h3>Suppression définitive</h3>
-            <p>
-              Effacer pour de bon {fullName(subscriber.lastName, subscriber.firstName)} (
-              {subscriber.subscriptionNumber}) et sa photo. Plus aucun retour en arrière possible.
-            </p>
-            <label className="field">
-              <span>Retapez le numéro {subscriber.subscriptionNumber}</span>
-              <input
-                className="mono"
-                value={typed}
-                onChange={(e) => setTyped(e.target.value)}
-                placeholder={subscriber.subscriptionNumber}
-              />
-            </label>
-            {error ? <div className="alert error">{error}</div> : null}
-            <div className="modal-actions">
+        <Modal
+          title="Suppression définitive"
+          footer={
+            <>
               <button type="button" className="btn btn-ghost" onClick={() => setOpen(false)}>
                 Annuler
               </button>
@@ -173,9 +155,24 @@ export function PurgeSubscriberButton({ subscriber, afterAction }: ButtonProps) 
               >
                 {busy ? "Suppression…" : "Supprimer définitivement"}
               </button>
-            </div>
-          </div>
-        </div>
+            </>
+          }
+        >
+          <p>
+            Effacer pour de bon {fullName(subscriber.lastName, subscriber.firstName)} (
+            {subscriber.subscriptionNumber}) et sa photo. Plus aucun retour en arrière possible.
+          </p>
+          <label className="field">
+            <span>Retapez le numéro {subscriber.subscriptionNumber}</span>
+            <input
+              className="mono"
+              value={typed}
+              onChange={(e) => setTyped(e.target.value)}
+              placeholder={subscriber.subscriptionNumber}
+            />
+          </label>
+          {error ? <div className="alert error">{error}</div> : null}
+        </Modal>
       ) : null}
     </>
   );

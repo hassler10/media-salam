@@ -419,7 +419,11 @@ button, input, select, textarea {
 .row-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .row-actions a, .row-actions button {
   background: none; border: 0; color: var(--green); cursor: pointer; font-weight: 600; font-size: 13px; padding: 0;
+  white-space: nowrap;
 }
+.row-actions .danger { color: #9b1c1c; }
+.row-actions button:disabled { color: var(--muted); cursor: progress; }
+.nowrap { white-space: nowrap; }
 .empty { text-align: center; color: var(--muted); padding: 24px !important; }
 .badge {
   display: inline-flex;
