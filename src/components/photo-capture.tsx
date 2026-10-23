@@ -25,6 +25,32 @@ function rotated(angle: number | undefined): boolean {
   return angle === 90 || angle === 270;
 }
 
+function errorName(err: unknown): string {
+  return err instanceof DOMException ? err.name : "";
+}
+
+/** Le refus du navigateur n'a presque jamais la même cause : chacune a sa parade. */
+function cameraErrorMessage(err: unknown): string {
+  const importHint = "Vous pouvez aussi utiliser « Ajouter une photo ».";
+  switch (errorName(err)) {
+    case "NotAllowedError":
+    case "PermissionDeniedError":
+      return `Accès à la caméra refusé. Touchez le cadenas de la barre d'adresse › Permissions › Caméra › Autoriser, rechargez la page et retentez. ${importHint}`;
+    case "NotFoundError":
+    case "DevicesNotFoundError":
+      return `Aucun appareil photo n'est disponible pour ce navigateur. ${importHint}`;
+    case "NotReadableError":
+    case "TrackStartError":
+      return `La caméra est occupée par une autre application ou un autre onglet. Fermez-la puis retentez. ${importHint}`;
+    case "OverconstrainedError":
+      return `L'appareil photo demandé ne fournit pas ce format. Choisissez « Appareil par défaut » puis retentez. ${importHint}`;
+    case "SecurityError":
+      return "Ce navigateur bloque l'appareil photo dans cette fenêtre (navigateur intégré d'une application). Ouvrez le lien dans Chrome ou Safari.";
+    default:
+      return `Impossible d'accéder à la caméra${err instanceof Error ? ` (${err.name})` : ""}. Vérifiez l'autorisation du navigateur ou importez une photo.`;
+  }
+}
+
 async function cropToIdPhoto(
   source: string,
   offsetX: number,
@@ -113,6 +139,12 @@ export function PhotoCapture({ value, onChange }: Props) {
   async function openCamera(next: { facing?: Facing; deviceId?: string | null } = {}) {
     setError(null);
     stopCamera();
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setError(
+        "Ce navigateur ne donne pas accès à l'appareil photo. Ouvrez le lien dans Chrome ou Safari, ou utilisez « Ajouter une photo ».",
+      );
+      return;
+    }
     const useFacing = next.facing ?? facing;
     const useId = next.deviceId !== undefined ? next.deviceId : cameraId;
     const video: MediaTrackConstraints = {
@@ -122,15 +154,23 @@ export function PhotoCapture({ value, onChange }: Props) {
     if (useId) video.deviceId = { exact: useId };
     else video.facingMode = useFacing;
     try {
-      const media = await navigator.mediaDevices.getUserMedia({ video, audio: false });
+      let media: MediaStream;
+      try {
+        media = await navigator.mediaDevices.getUserMedia({ video, audio: false });
+      } catch (first) {
+        // Idéaux refusés ou appareil disparu entre-temps : on retente avec la caméra telle qu'elle est.
+        const name = errorName(first);
+        const recoverable = name === "OverconstrainedError" || (useId && name === "NotFoundError");
+        if (!recoverable) throw first;
+        setCameraId(null);
+        media = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+      }
       streamRef.current = media;
       setStream(media);
       setFacing(useFacing);
       setMode("camera");
-    } catch {
-      setError(
-        "Impossible d'accéder à la caméra. Vérifiez l'autorisation du navigateur, choisissez un autre appareil photo ou importez une photo.",
-      );
+    } catch (err) {
+      setError(cameraErrorMessage(err));
     }
   }
 
