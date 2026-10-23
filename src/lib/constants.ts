@@ -34,6 +34,8 @@ export const HEAVY_READ_LIMITS = {
   csvExport: { max: 3, windowMs: 60_000 },
   // La liste affiche les vignettes et recharge à chaque frappe dans la recherche.
   photos: { max: 120, windowMs: 60_000 },
+  // L'archive de tous les visages est une sortie massive : deux par quart d'heure.
+  photoArchive: { max: 2, windowMs: 15 * 60_000 },
 } as const;
 
 /** Actions irréversibles ou sensibles, plafonnées par compte sur une plus longue fenêtre. */

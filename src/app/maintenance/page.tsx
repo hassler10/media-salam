@@ -68,8 +68,25 @@ export default function MaintenancePage() {
     a.download = `sauvegarde-bms-${new Date().toISOString().slice(0, 10)}.json`;
     a.click();
     URL.revokeObjectURL(url);
-    setMessage("Sauvegarde JSON téléchargée (abonnés, photos, journaux).");
+    setMessage("Sauvegarde JSON téléchargée (fiches, journaux, réglages — sans les visages).");
     void refresh();
+  }
+
+  async function archivePhotos() {
+    const res = await apiFetch("/api/backup/photos");
+    if (!res.ok) {
+      await readError(res);
+      return;
+    }
+    const data = (await res.json()) as { count?: number };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `visages-bms-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    setMessage(`Archive des visages téléchargée (${data.count ?? 0}) : conservez-la hors ligne, elle vaut pour photo d'identité.`);
   }
 
   async function importCsv(file: File) {
@@ -180,6 +197,22 @@ export default function MaintenancePage() {
           <strong>{status?.missingPhotos ?? "—"}</strong>
         </article>
         <article className="stat-card">
+          <span>Photos sans accord</span>
+          <strong className={status?.photosWithoutConsent ? "bad" : "ok"}>
+            {status?.photosWithoutConsent ?? "—"}
+          </strong>
+          <small>
+            <Link href="/abonnes?filter=sans-consent">Confirmer l&apos;accord ou retirer la photo</Link>
+          </small>
+        </article>
+        <article className="stat-card">
+          <span>Visages à revoir</span>
+          <strong className={status?.expiredPhotos ? "bad" : "ok"}>{status?.expiredPhotos ?? "—"}</strong>
+          <small>
+            <Link href="/abonnes?filter=expires">Abonnements expirés : renouveler ou purger</Link>
+          </small>
+        </article>
+        <article className="stat-card">
           <span>Erreurs de cartes</span>
           <strong>{status?.cardErrorCount ?? 0}</strong>
         </article>
@@ -201,12 +234,16 @@ export default function MaintenancePage() {
         <div className="panel">
           <h3>Sauvegardes et échanges</h3>
           <p className="muted">
-            Les photos et données personnelles sont stockées dans PostgreSQL. Exportez régulièrement une
-            sauvegarde chiffrée hors ligne.
+            Les fiches et les réglages sont dans PostgreSQL. La sauvegarde JSON ne contient plus les
+            visages : ils ont une archive à part, réservée au super administrateur, plafonnée et notée
+            dans le journal. Conservez ces fichiers hors ligne et protégés.
           </p>
           <div className="form-buttons">
             <button type="button" className="btn btn-primary" onClick={() => void backup()}>
-              Télécharger une sauvegarde JSON
+              Télécharger une sauvegarde JSON (sans les visages)
+            </button>
+            <button type="button" className="btn btn-ghost" onClick={() => void archivePhotos()}>
+              Archiver les visages (super admin)
             </button>
             <button type="button" className="btn btn-ghost" onClick={() => void exportCsv()}>
               Exporter les abonnés en CSV

@@ -11,6 +11,8 @@ export type Subscriber = {
   registrationDate: string;
   validityDate: string;
   photoData: string | null;
+  /** La personne autorise la prise et la conservation de sa photo. */
+  photoConsent: boolean;
   notes: string | null;
   isDemo: boolean;
   cardGeneratedAt: string | null;
@@ -31,6 +33,7 @@ export type SubscriberInput = {
   registrationDate?: string;
   validityDate: string;
   photoData?: string | null;
+  photoConsent?: boolean | null;
   notes?: string;
   regenerateNumber?: boolean;
 };
@@ -81,6 +84,8 @@ export type MaintenanceStatus = {
   trashCount: number;
   duplicateNumbers: string[];
   missingPhotos: number;
+  photosWithoutConsent: number;
+  expiredPhotos: number;
   expiredCount: number;
   logCount: number;
   cardErrorCount: number;

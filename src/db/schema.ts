@@ -22,6 +22,8 @@ export const subscribers = pgTable("subscribers", {
   registrationDate: date("registration_date", { mode: "string" }).notNull(),
   validityDate: date("validity_date", { mode: "string" }).notNull(),
   photoData: text("photo_data"),
+  /** Accord explicite pour prendre et conserver la photo ; faux pour les fiches héritées. */
+  photoConsent: boolean("photo_consent").default(false).notNull(),
   notes: text("notes"),
   isDemo: boolean("is_demo").default(false).notNull(),
   cardGeneratedAt: timestamp("card_generated_at"),

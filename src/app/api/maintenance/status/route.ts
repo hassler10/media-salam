@@ -1,4 +1,4 @@
-import { and, count, eq, isNotNull, isNull, lt, or, sql } from "drizzle-orm";
+import { and, count, eq, isNotNull, isNull, lt, ne, or, sql } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { activityLogs, admins, cardErrors, settings, subscribers } from "@/db/schema";
@@ -36,6 +36,15 @@ export async function GET() {
     .select({ n: count() })
     .from(subscribers)
     .where(and(active, lt(subscribers.validityDate, today)));
+  const withPhoto = and(active, isNotNull(subscribers.photoData), ne(subscribers.photoData, ""));
+  const [noConsentRow] = await db
+    .select({ n: count() })
+    .from(subscribers)
+    .where(and(withPhoto, eq(subscribers.photoConsent, false)));
+  const [expiredPhotoRow] = await db
+    .select({ n: count() })
+    .from(subscribers)
+    .where(and(withPhoto, lt(subscribers.validityDate, today)));
   const [logRow] = await db.select({ n: count() }).from(activityLogs);
   const [errRow] = await db.select({ n: count() }).from(cardErrors);
   const [adminRow] = await db.select({ n: count() }).from(admins);
@@ -53,6 +62,8 @@ export async function GET() {
       trashCount: Number(trashedRow?.n ?? 0),
       duplicateNumbers: (dupResult.rows ?? []).map((r) => r.subscription_number),
       missingPhotos: Number(photoRow?.n ?? 0),
+      photosWithoutConsent: Number(noConsentRow?.n ?? 0),
+      expiredPhotos: Number(expiredPhotoRow?.n ?? 0),
       expiredCount: Number(expiredRow?.n ?? 0),
       logCount: Number(logRow?.n ?? 0),
       cardErrorCount: Number(errRow?.n ?? 0),

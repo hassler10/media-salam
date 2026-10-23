@@ -1,4 +1,4 @@
-import { and, desc, eq, ilike, isNotNull, isNull, or, sql, type SQL } from "drizzle-orm";
+import { and, desc, eq, ilike, isNotNull, isNull, ne, or, sql, type SQL } from "drizzle-orm";
 import { db } from "@/db";
 import { subscribers, subscriptionCounter } from "@/db/schema";
 import { SUBSCRIPTION_PREFIX } from "@/lib/constants";
@@ -22,6 +22,7 @@ function mapSubscriber(row: SubscriberRow | SubscriberRowLite): Subscriber {
     registrationDate: row.registrationDate,
     validityDate: row.validityDate,
     photoData: "photoData" in row ? row.photoData : null,
+    photoConsent: Boolean(row.photoConsent),
     notes: row.notes,
     isDemo: row.isDemo,
     cardGeneratedAt: toISODateTime(row.cardGeneratedAt),
@@ -82,6 +83,7 @@ const LITE_COLUMNS = {
   phone: subscribers.phone,
   registrationDate: subscribers.registrationDate,
   validityDate: subscribers.validityDate,
+  photoConsent: subscribers.photoConsent,
   notes: subscribers.notes,
   isDemo: subscribers.isDemo,
   cardGeneratedAt: subscribers.cardGeneratedAt,
@@ -113,6 +115,9 @@ export async function listSubscribers(options?: {
   }
   if (options?.filter === "hommes") conditions.push(eq(subscribers.gender, "masculin"));
   if (options?.filter === "femmes") conditions.push(eq(subscribers.gender, "feminin"));
+  if (options?.filter === "sans-consent") {
+    conditions.push(isNotNull(subscribers.photoData), ne(subscribers.photoData, ""), eq(subscribers.photoConsent, false));
+  }
 
   const columns = includePhoto ? { ...LITE_COLUMNS, photoData: subscribers.photoData } : LITE_COLUMNS;
   const rows = (await db
@@ -193,8 +198,25 @@ export function validateInput(input: SubscriberInput): string | null {
   return null;
 }
 
+/** Accord explicite demandé pour toute photo nouvelle ou remplacée ; le retrait passe par la suppression de la photo. */
+function consentError(input: SubscriberInput, current: { photoData: string | null; photoConsent: boolean }): string | null {
+  const photo = input.photoData ?? "";
+  if (!photo) return null;
+  if (photo === (current.photoData ?? "")) {
+    // Une fiche héritée sans accord enregistré reste modifiable ; on ne révoque pas silencieusement un accord pris.
+    if (input.photoConsent === false && current.photoConsent) {
+      return "L'accord est décoché alors que la photo est conservée : retirez la photo pour traduire le refus.";
+    }
+    return null;
+  }
+  if (input.photoConsent !== true) {
+    return "Photo refusée : cochez l'accord de la personne avant d'enregistrer sa photo.";
+  }
+  return null;
+}
+
 export async function createSubscriber(input: SubscriberInput, isDemo = false): Promise<Subscriber> {
-  const error = validateInput(input);
+  const error = validateInput(input) ?? consentError(input, { photoData: null, photoConsent: false });
   if (error) throw Object.assign(new Error(error), { status: 400 });
   const subscriptionNumber = await nextSubscriptionNumber();
   const rows = await db
@@ -209,6 +231,7 @@ export async function createSubscriber(input: SubscriberInput, isDemo = false): 
       registrationDate: input.registrationDate || todayISO(),
       validityDate: input.validityDate,
       photoData: input.photoData || null,
+      photoConsent: Boolean(input.photoData) && input.photoConsent === true,
       notes: input.notes || null,
       isDemo,
       cardGeneratedAt: new Date(),
@@ -222,6 +245,15 @@ export async function updateSubscriber(id: number, input: SubscriberInput): Prom
   if (error) throw Object.assign(new Error(error), { status: 400 });
   const current = await getSubscriber(id);
   if (!current) throw Object.assign(new Error("Abonné introuvable."), { status: 404 });
+  const photoData = input.photoData === undefined ? current.photoData : input.photoData || null;
+  const consent = consentError(input, current);
+  if (consent) throw Object.assign(new Error(consent), { status: 400 });
+  // Un envoi sans le champ (import CSV, outil tiers) ne révoque pas un accord déjà pris.
+  const photoConsent = photoData
+    ? input.photoConsent === undefined
+      ? current.photoConsent
+      : input.photoConsent === true
+    : false;
 
   let subscriptionNumber = current.subscriptionNumber;
   if (input.regenerateNumber) {
@@ -239,7 +271,8 @@ export async function updateSubscriber(id: number, input: SubscriberInput): Prom
       phone: input.phone.trim(),
       registrationDate: input.registrationDate || current.registrationDate,
       validityDate: input.validityDate,
-      photoData: input.photoData === undefined ? current.photoData : input.photoData,
+      photoData,
+      photoConsent,
       notes: input.notes ?? current.notes,
       updatedAt: new Date(),
     })

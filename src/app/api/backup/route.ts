@@ -22,7 +22,29 @@ export async function GET() {
       return fail("Trop de sauvegardes à la suite. Réessayez dans une minute.", 429);
     }
     const [subs, logs, ads, errs, sets, counters] = await Promise.all([
-      db.select().from(subscribers),
+      // Les visages ne sont pas dans la sauvegarde courante : ils ont leur archive séparée.
+      db
+        .select({
+          id: subscribers.id,
+          subscriptionNumber: subscribers.subscriptionNumber,
+          lastName: subscribers.lastName,
+          firstName: subscribers.firstName,
+          gender: subscribers.gender,
+          profession: subscribers.profession,
+          phone: subscribers.phone,
+          registrationDate: subscribers.registrationDate,
+          validityDate: subscribers.validityDate,
+          photoConsent: subscribers.photoConsent,
+          notes: subscribers.notes,
+          isDemo: subscribers.isDemo,
+          cardGeneratedAt: subscribers.cardGeneratedAt,
+          lastPrintedAt: subscribers.lastPrintedAt,
+          deletedAt: subscribers.deletedAt,
+          deletedBy: subscribers.deletedBy,
+          createdAt: subscribers.createdAt,
+          updatedAt: subscribers.updatedAt,
+        })
+        .from(subscribers),
       db.select().from(activityLogs),
       db.select({
         id: admins.id,
@@ -43,7 +65,7 @@ export async function GET() {
     });
     await logActivity({
       action: "backup_created",
-      details: `Sauvegarde JSON de ${subs.length} abonnés.`,
+      details: `Sauvegarde JSON de ${subs.length} abonnés, sans les visages.`,
       actor: user.username,
     });
 

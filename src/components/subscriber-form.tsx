@@ -22,6 +22,7 @@ type FormState = {
   registrationDate: string;
   validityDate: string;
   photoData: string | null;
+  photoConsent: boolean;
   notes: string;
   regenerateNumber: boolean;
 };
@@ -35,6 +36,7 @@ const empty = (): FormState => ({
   registrationDate: todayISO(),
   validityDate: addYearsISO(todayISO(), 1),
   photoData: null,
+  photoConsent: false,
   notes: "",
   regenerateNumber: false,
 });
@@ -49,6 +51,7 @@ function fromSubscriber(s: Subscriber): FormState {
     registrationDate: s.registrationDate,
     validityDate: s.validityDate,
     photoData: s.photoData,
+    photoConsent: s.photoConsent,
     notes: s.notes ?? "",
     regenerateNumber: false,
   };
@@ -101,7 +104,19 @@ export function SubscriberForm({
     if (!form.firstName.trim()) return "Les prénoms sont obligatoires.";
     if (!form.phone.trim() || form.phone.trim() === "+225") return "Le contact téléphonique est obligatoire.";
     if (!form.validityDate) return "La date de validité est obligatoire.";
+    if (form.photoData && form.photoData !== (saved?.photoData ?? null) && !form.photoConsent) {
+      return "Cochez l'accord de la personne avant d'enregistrer sa photo.";
+    }
     return null;
+  }
+
+  /** Changer de visage vaut un nouvel accord : la case repart décochée. */
+  function onPhotoChange(photo: string | null) {
+    setForm((prev) => ({
+      ...prev,
+      photoData: photo,
+      photoConsent: photo && photo === prev.photoData ? prev.photoConsent : false,
+    }));
   }
 
   async function save(): Promise<Subscriber | null> {
@@ -122,6 +137,7 @@ export function SubscriberForm({
         registrationDate: form.registrationDate,
         validityDate: form.validityDate,
         photoData: form.photoData,
+        photoConsent: form.photoConsent,
         notes: form.notes,
         regenerateNumber: isEdit ? form.regenerateNumber : false,
       };
@@ -308,7 +324,17 @@ export function SubscriberForm({
 
         <div className="field">
           <span>Photo d&apos;identité</span>
-          <PhotoCapture value={form.photoData} onChange={(photo) => update("photoData", photo)} />
+          <PhotoCapture value={form.photoData} onChange={onPhotoChange} />
+          {form.photoData ? (
+            <label className="check">
+              <input
+                type="checkbox"
+                checked={form.photoConsent}
+                onChange={(e) => update("photoConsent", e.target.checked)}
+              />
+              La personne autorise la prise de sa photo et sa conservation dans le fichier des abonnés.
+            </label>
+          ) : null}
         </div>
 
         <div className="form-buttons">
@@ -404,6 +430,7 @@ function isDirty(saved: Subscriber, form: FormState) {
     saved.phone !== form.phone.trim() ||
     saved.validityDate !== form.validityDate ||
     saved.photoData !== form.photoData ||
+    saved.photoConsent !== form.photoConsent ||
     (saved.notes ?? "") !== form.notes
   );
 }

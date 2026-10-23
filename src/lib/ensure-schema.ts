@@ -34,6 +34,7 @@ async function createSchema() {
       registration_date date NOT NULL,
       validity_date date NOT NULL,
       photo_data text,
+      photo_consent boolean NOT NULL DEFAULT false,
       notes text,
       is_demo boolean NOT NULL DEFAULT false,
       card_generated_at timestamp,
@@ -48,7 +49,8 @@ async function createSchema() {
   await db.execute(sql`
     ALTER TABLE subscribers
       ADD COLUMN IF NOT EXISTS deleted_at timestamp,
-      ADD COLUMN IF NOT EXISTS deleted_by varchar(80)
+      ADD COLUMN IF NOT EXISTS deleted_by varchar(80),
+      ADD COLUMN IF NOT EXISTS photo_consent boolean NOT NULL DEFAULT false
   `);
   await db.execute(sql`
     CREATE TABLE IF NOT EXISTS subscription_counter (

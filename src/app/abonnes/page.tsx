@@ -21,6 +21,7 @@ const FILTERS = [
   { id: "bientot", label: "Arrivant à expiration" },
   { id: "hommes", label: "Hommes" },
   { id: "femmes", label: "Femmes" },
+  { id: "sans-consent", label: "Photos sans accord" },
   { id: "supprimes", label: "Corbeille" },
 ];
 

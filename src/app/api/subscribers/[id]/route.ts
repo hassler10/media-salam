@@ -37,6 +37,9 @@ export async function PUT(request: Request, ctx: Ctx) {
     const actions = ["subscriber_updated"];
     if (body.regenerateNumber) actions.push("number_regenerated");
     if (previous && previous.photoData !== item.photoData) actions.push("photo_updated");
+    if (previous && previous.photoConsent !== item.photoConsent) {
+      actions.push(item.photoConsent ? "photo_consent_granted" : "photo_consent_withdrawn");
+    }
     for (const action of actions) {
       await logActivity({
         action,
