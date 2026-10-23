@@ -11,17 +11,19 @@ export function Modal({
   title,
   children,
   footer,
+  className,
 }: {
   title: string;
   children: ReactNode;
   footer: ReactNode;
+  className?: string;
 }) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
   if (!mounted) return null;
   return createPortal(
     <div className="modal-backdrop">
-      <div className="modal">
+      <div className={className ? `modal ${className}` : "modal"}>
         <h3>{title}</h3>
         {children}
         <div className="modal-actions">{footer}</div>
