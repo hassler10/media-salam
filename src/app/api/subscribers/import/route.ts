@@ -3,6 +3,7 @@ import { db } from "@/db";
 import { subscribers } from "@/db/schema";
 import { fail, requireApiUser } from "@/lib/api-guard";
 import { logActivity } from "@/lib/logs";
+import { notifyLibrary } from "@/lib/library-webhook";
 import { nextSubscriptionNumber } from "@/lib/subscribers";
 import {
   clip,
@@ -88,7 +89,15 @@ export async function POST(request: Request) {
       details: `Import CSV : ${created} créés, ${skipped} ignorés.`,
       actor: user.username,
     });
-    return NextResponse.json({ created, skipped });
+    const librarySync = created > 0 ? await notifyLibrary("registry.refresh") : "disabled";
+    if (created > 0 && librarySync === "failed") {
+      await logActivity({
+        action: "library_webhook_failed",
+        details: "La notification de mise à jour du registre Salam Library a échoué après l’import CSV.",
+        actor: user.username,
+      });
+    }
+    return NextResponse.json({ created, skipped, librarySync });
   } catch (error) {
     console.error(error);
     return fail("Impossible d'importer le fichier CSV.", 500);

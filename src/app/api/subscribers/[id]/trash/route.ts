@@ -3,6 +3,7 @@ import { fail, requireApiUser } from "@/lib/api-guard";
 import { SENSITIVE_WRITE_LIMITS } from "@/lib/constants";
 import { overLimit } from "@/lib/guard";
 import { logActivity } from "@/lib/logs";
+import { notifyLibrary } from "@/lib/library-webhook";
 import { getSubscriber, parseSubscriberId, purgeSubscriber, restoreSubscriber } from "@/lib/subscribers";
 
 export const dynamic = "force-dynamic";
@@ -48,7 +49,18 @@ export async function POST(request: Request, ctx: Ctx) {
       entityId: id,
       actor: user.username,
     });
-    return NextResponse.json({ ok: true });
+    const current = await getSubscriber(id, { includeDeleted: true });
+    const librarySync = current ? await notifyLibrary("subscriber.changed", current) : "failed";
+    if (librarySync === "failed") {
+      await logActivity({
+        action: "library_webhook_failed",
+        details: "La notification de mise à jour du registre Salam Library a échoué.",
+        entityType: "subscriber",
+        entityId: id,
+        actor: user.username,
+      });
+    }
+    return NextResponse.json({ ok: true, librarySync });
   }
 
   if (
@@ -72,5 +84,15 @@ export async function POST(request: Request, ctx: Ctx) {
     entityId: id,
     actor: user.username,
   });
-  return NextResponse.json({ ok: true });
+  const librarySync = await notifyLibrary("registry.refresh");
+  if (librarySync === "failed") {
+    await logActivity({
+      action: "library_webhook_failed",
+      details: "La notification de mise à jour du registre Salam Library a échoué.",
+      entityType: "subscriber",
+      entityId: id,
+      actor: user.username,
+    });
+  }
+  return NextResponse.json({ ok: true, librarySync });
 }

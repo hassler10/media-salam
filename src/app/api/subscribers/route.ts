@@ -3,6 +3,7 @@ import { fail, requireApiUser } from "@/lib/api-guard";
 import { overLimit } from "@/lib/guard";
 import { HEAVY_READ_LIMITS } from "@/lib/constants";
 import { logActivity } from "@/lib/logs";
+import { notifyLibrary } from "@/lib/library-webhook";
 import { createSubscriber, listSubscribers } from "@/lib/subscribers";
 import type { SubscriberInput } from "@/lib/types";
 
@@ -42,7 +43,17 @@ export async function POST(request: Request) {
       entityId: created.id,
       actor: user.username,
     });
-    return NextResponse.json({ item: created }, { status: 201 });
+    const librarySync = await notifyLibrary("subscriber.changed", created);
+    if (librarySync === "failed") {
+      await logActivity({
+        action: "library_webhook_failed",
+        details: "La notification de mise à jour du registre Salam Library a échoué.",
+        entityType: "subscriber",
+        entityId: created.id,
+        actor: user.username,
+      });
+    }
+    return NextResponse.json({ item: created, librarySync }, { status: 201 });
   } catch (error) {
     const err = error as Error & { status?: number };
     if (err.status && err.status < 500) return fail(err.message, err.status);

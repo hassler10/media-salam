@@ -155,7 +155,12 @@ export function SubscriberForm({
       setSaved(item);
       setPreviewNumber(item.subscriptionNumber);
       setForm((prev) => ({ ...prev, regenerateNumber: false }));
-      setMessage(`Abonné enregistré. Numéro ${item.subscriptionNumber}.`);
+      const syncNotice = data.librarySync === "sent"
+        ? " Salam Library a été informée immédiatement."
+        : data.librarySync === "failed"
+          ? " La notification vers Salam Library a échoué; vérifiez la synchronisation."
+          : " Le webhook n’est pas configuré; la synchronisation habituelle reste disponible.";
+      setMessage(`Abonné enregistré. Numéro ${item.subscriptionNumber}.${syncNotice}`);
       return item;
     } catch {
       setError("Erreur réseau pendant l'enregistrement.");
